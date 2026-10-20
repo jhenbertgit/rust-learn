@@ -52,7 +52,10 @@ if (!SYSROOT) {
   process.exit(required ? 1 : 0);
 }
 
-const DOCS = path.join(SYSROOT, 'share', 'doc', 'rust', 'html');
+// The docshelf only exists where `rustup component add rust-docs` has run. Without it the
+// href targets cannot be checked, so they are validated for shape instead of existence.
+const DOCS = process.env.RUST_DOCS || path.join(SYSROOT, 'share', 'doc', 'rust', 'html');
+const DOCS_AVAILABLE = fs.existsSync(path.join(DOCS, 'index.html'));
 
 /** Compile+run through file descriptors (sandboxes may deny piped stdio). */
 function compileAndRun(code, mode) {
@@ -239,9 +242,21 @@ for (const file of files) {
   }
 
   (lesson.docs || []).forEach((doc, i) => {
-    if (!doc.label || !doc.href) problem(where, `docs[${i}] needs label and href`);
-    else if (DOCS && !fs.existsSync(path.join(DOCS, doc.href))) {
-      problem(where, `docs[${i}] points at a missing file: ${doc.href}`);
+    if (!doc.label || !doc.href) {
+      problem(where, `docs[${i}] needs both label and href`);
+      return;
+    }
+    const href = String(doc.href);
+    if (/^([a-z][a-z0-9+.-]*:|\/)/i.test(href) || href.includes('..')) {
+      problem(where, `docs[${i}] must be a path inside the docshelf, not an absolute URL: ${href}`);
+      return;
+    }
+    if (!/^[\w./-]+$/.test(href)) {
+      problem(where, `docs[${i}] has characters a docshelf path should not have: ${href}`);
+      return;
+    }
+    if (DOCS_AVAILABLE && !fs.existsSync(path.join(DOCS, href))) {
+      problem(where, `docs[${i}] points at a file that is not in the docshelf: ${href}`);
     }
   });
 }
@@ -262,7 +277,11 @@ try {
 }
 
 const unique = [...new Set(problems)];
+const docsStatus = DOCS_AVAILABLE
+  ? 'docshelf links checked for existence'
+  : `docshelf absent at ${DOCS} — links checked for shape only`;
 console.log(`\nchecked ${files.length} lesson file(s), ${snippets} code block(s), ${runs} program run(s)`);
+console.log(`${docsStatus}`);
 if (notes.length) {
   console.log(`\nnotes (${notes.length}):`);
   notes.forEach((n) => console.log(`  - ${n}`));

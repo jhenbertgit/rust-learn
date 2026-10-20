@@ -27,21 +27,28 @@ concurrency:
 jobs:
   verify-and-build:
     name: Verify lessons, then build the site
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Show the toolchain
         run: |
           node --version
           rustc --version
           cargo --version
+
+      # Runners ship rustc without the documentation component, which the lesson
+      # verifier uses to confirm that every docs link points at a real chapter.
+      # If this cannot be installed, verify.mjs checks link shape only.
+      - name: Install the offline docshelf
+        continue-on-error: true
+        run: rustup component add rust-docs
 
       - name: Verify every snippet against the compiler
         env:
@@ -52,21 +59,21 @@ jobs:
         run: node scripts/build-static.mjs
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload the artifact Pages will serve
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
     name: Deploy to GitHub Pages
     needs: verify-and-build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

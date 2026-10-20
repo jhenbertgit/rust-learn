@@ -111,7 +111,10 @@ The workflow runs three things in order:
 
 1. `node scripts/verify.mjs` — compiles every snippet in every chapter and compares the
    output against what the lesson claims. **A lesson that no longer compiles blocks the
-   deploy**, so the published course cannot drift from the compiler's reality.
+   deploy**, so the published course cannot drift from the compiler's reality. The job
+   installs the `rust-docs` component first, so every `docs` link is also confirmed to point
+   at a chapter that exists; if that component cannot be installed, links are checked for
+   shape only and the run says so.
 2. `node scripts/build-static.mjs` — writes `dist/`: `public/`, `content/`, a `.nojekyll`
    marker, and `app-config.json`.
 3. Upload the artifact and deploy it.
