@@ -1,0 +1,100 @@
+{
+  "id": "09-enums",
+  "title": "Enums and matching",
+  "minutes": 11,
+  "summary": "An enum lists the shapes a value can take; match takes it apart.",
+  "keywords": ["enum", "match", "Option", "Some", "None", "if let", "while let"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>So far every value we built had one shape: a <code>struct</code> with a fixed set of fields. An <strong>enum</strong> is the other way to build a type. It lists the shapes a value may take, and a value of that type is exactly one of them.</p><p>Start with the plain case: names, with no data attached.</p>"
+    },
+    {
+      "type": "code",
+      "title": "an enum of names",
+      "code": "enum Direction {\n    North,\n    South,\n    East,\n    West,\n}\n\nfn main() {\n    let heading = Direction::North;\n    match heading {\n        Direction::North => println!(\"going up\"),\n        Direction::South => println!(\"going down\"),\n        Direction::East => println!(\"going right\"),\n        Direction::West => println!(\"going left\"),\n    }\n}\n",
+      "output": "going up"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>Direction</code> is a type now, and <code>Direction::North</code> is one of its four values: the enum name, two colons, the variant. Because the compiler knows the whole list, a <code>match</code> that forgets a variant is not a warning. It is a build failure.</p><p>A <code>match</code> is not a menu of suggestions. Take the program above, drop the last two arms, and you have a shorter match that looks perfectly innocent:</p><p><code>match heading {<br>    Direction::North => println!(\"going up\"),<br>    Direction::South => println!(\"going down\"),<br>}</code></p><p>The compiler does not shrug at the missing arms. It counts the variants for you and names what you skipped.</p>"
+    },
+    {
+      "type": "callout",
+      "tone": "warn",
+      "html": "<p>The build stops with:</p><p><code>error[E0004]: non-exhaustive patterns: `Direction::East` and `Direction::West` not covered</code><br><code>10 |     match heading {</code><br><code>   |           ^^^^^^^ patterns `Direction::East` and `Direction::West` not covered</code></p><p>Under that it prints <code>note: `Direction` defined here</code> with the unhandled variants underlined, and suggests an arm you could add. That strictness is the feature: add a fifth variant next month and every <code>match</code> over the enum stops compiling until you decide what it should do.</p>"
+    },
+    {
+      "type": "code",
+      "title": "variants that carry data",
+      "code": "enum Shape {\n    Circle { radius: f64 },\n    Point(i32, i32),\n}\n\nfn main() {\n    let shapes = [\n        Shape::Circle { radius: 2.0 },\n        Shape::Point(3, -1),\n    ];\n\n    for s in shapes {\n        match s {\n            Shape::Circle { radius } => println!(\"circle of radius {radius}\"),\n            Shape::Point(x, y) => println!(\"point at {x}, {y}\"),\n        }\n    }\n}\n",
+      "output": "circle of radius 2\npoint at 3, -1"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Notice what we did not need: one struct per shape, a <code>kind</code> field to say which fields are meaningful, or a way to build a circle without a radius. The variants carry different data, and <code>match</code> is how you reach it. Each arm names a shape and unpacks its fields in the same line.</p><p>Patterns are not limited to whole variants. You can match literal values, ranges, and finish with a catch-all.</p>"
+    },
+    {
+      "type": "code",
+      "title": "literals, ranges, a catch-all, and _",
+      "code": "fn main() {\n    let n = 7;\n\n    match n {\n        0 => println!(\"zero\"),\n        1 => println!(\"one\"),\n        2..=5 => println!(\"a few\"),\n        other => println!(\"something else: {other}\"),\n    }\n\n    let flag = false;\n    match (n, flag) {\n        (7, _) => println!(\"seven, whatever the flag is\"),\n        _ => println!(\"not seven\"),\n    }\n}\n",
+      "output": "something else: 7\nseven, whatever the flag is"
+    },
+    {
+      "type": "prose",
+      "html": "<p>This is the enum you will use every day. Code that looks something up may find nothing, and most languages answer with <code>null</code>, which fits every type and belongs to none. Rust puts the gamble in the type. The standard library defines it roughly as:</p><p><code>enum Option&lt;T&gt; { Some(T), None }</code></p><p><code>None</code> is an ordinary value of type <code>Option&lt;T&gt;</code>, so getting the number out of an <code>Option&lt;i32&gt;</code> takes a <code>match</code>, and you must say what happens when it is empty. Rust has no null.</p><p><code>if let</code> tests one variant and skips the rest, <code>while let</code> loops while the pattern matches, and <code>unwrap_or(fallback)</code> collapses an <code>Option</code> to a plain value: the number if there is one, the fallback otherwise.</p>"
+    },
+    {
+      "type": "diagram",
+      "title": "Option<i32>: a box that holds a number, or nothing",
+      "ascii": "let a: Option<i32> = Some(5);\nlet b: Option<i32> = None;\n\n   a = Some(5)                b = None\n+-----------------+        +-----------------+\n| tag: Some       |        | tag: None       |\n| payload: 5      |        | payload: --     |\n+-----------------+        +-----------------+"
+    },
+    {
+      "type": "code",
+      "title": "match and if let on Option",
+      "code": "fn main() {\n    let age: Option<i32> = Some(30);\n    let missing: Option<i32> = None;\n\n    match age {\n        Some(n) => println!(\"age is {n}\"),\n        None => println!(\"no age recorded\"),\n    }\n\n    if let Some(n) = missing {\n        println!(\"age is {n}\");\n    } else {\n        println!(\"still no age recorded\");\n    }\n\n    println!(\"default to {}\", missing.unwrap_or(0));\n}\n",
+      "output": "age is 30\nstill no age recorded\ndefault to 0"
+    },
+    {
+      "type": "code",
+      "title": "while let keeps going while there is something",
+      "code": "fn main() {\n    let mut pending = Some(3);\n\n    while let Some(n) = pending {\n        println!(\"working on {n}\");\n        pending = if n > 1 { Some(n - 1) } else { None };\n    }\n\n    println!(\"nothing left\");\n}\n",
+      "output": "working on 3\nworking on 2\nworking on 1\nnothing left"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "What does the compiler do when a match leaves out a variant of the enum?",
+      "options": ["Refuses to compile and names the missing variants", "Compiles, and panics at runtime if that variant turns up", "Compiles, and the missing variants do nothing"],
+      "answer": 0,
+      "why": "Matching is exhaustive: every variant needs an arm, or a catch-all that covers what is left. The error is E0004 and it lists the variants you forgot."
+    },
+    {
+      "q": "Which value can a variable of type Option<i32> hold?",
+      "options": ["Some(5) or None", "5, or 0 when there is nothing", "Any i32, plus null"],
+      "answer": 0,
+      "why": "Option is an enum with exactly two variants: Some carries one value, None carries nothing. There is no third state and no null."
+    },
+    {
+      "q": "let maybe: Option<i32> = None; — which line prints a number instead of panicking?",
+      "options": ["println!(\"{}\", maybe.unwrap_or(0));", "println!(\"{}\", maybe);", "println!(\"{}\", maybe.0);"],
+      "answer": 0,
+      "why": "unwrap_or takes the value when there is one and falls back to the argument when the Option is None. Option does not implement Display, and it has no positional field to index."
+    }
+  ],
+  "exercise": {
+    "brief": "The starter defines an enum for a traffic light holding Yellow. Write a match with one arm per variant and print exactly wait.",
+    "starter": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nfn main() {\n    let light = Light::Yellow;\n    // match on light and print one word for it\n\n}\n",
+    "hint": "Each arm is Pattern => expression, and the arms are separated by commas. You need three arms, one for Light::Red, Light::Yellow and Light::Green, even though only one of them runs.",
+    "checks": [
+      { "kind": "compiles" },
+      { "kind": "outputEquals", "value": "wait" }
+    ],
+    "solution": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nfn main() {\n    let light = Light::Yellow;\n    match light {\n        Light::Red => println!(\"stop\"),\n        Light::Yellow => println!(\"wait\"),\n        Light::Green => println!(\"go\"),\n    }\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Defining an Enum", "href": "book/ch06-01-defining-an-enum.html" },
+    { "label": "The Book · The match Control Flow Construct", "href": "book/ch06-02-match.html" },
+    { "label": "std · Option", "href": "std/option/enum.Option.html" }
+  ]
+}

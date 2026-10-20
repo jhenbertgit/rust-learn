@@ -1,0 +1,104 @@
+{
+  "id": "08-structs",
+  "title": "Structs and methods",
+  "minutes": 10,
+  "summary": "Group fields into one named type, then give that type its own methods.",
+  "keywords": ["struct", "impl", "self", "tuple struct", "Debug"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Related values want to travel together. A player has a name and a score; keeping them in two loose variables means every function takes two parameters and nothing stops you from pairing the wrong ones. A struct groups them into a single named type with named fields.</p>"
+    },
+    {
+      "type": "code",
+      "title": "declare, build, mutate",
+      "code": "struct Player {\n    name: String,\n    score: u32,\n}\n\nfn main() {\n    let mut p = Player {\n        name: String::from(\"ada\"),\n        score: 10,\n    };\n    println!(\"{} has {}\", p.name, p.score);\n    p.score = 25;\n    println!(\"{} has {}\", p.name, p.score);\n}\n",
+      "output": "ada has 10\nada has 25"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A field is reached with a dot: <code>p.score</code>, read or written. Writing needs the binding to be <code>mut</code> — <code>let mut p</code>, not <code>let p</code> — because <code>mut</code> is a property of the binding, not of the struct type. The field list order in the literal does not have to match the declaration.</p><p>Ownership applies field by field. The <code>name</code> field is a <code>String</code>, so <code>Player</code> owns that string and drops it with itself when <code>p</code> leaves the scope.</p>"
+    },
+    {
+      "type": "code",
+      "title": "shorthand and update syntax",
+      "code": "struct Config {\n    width: u32,\n    height: u32,\n    title: String,\n}\n\nfn main() {\n    let title = String::from(\"window\");\n    let a = Config { width: 800, height: 600, title };\n    let b = Config { width: 1024, ..a };\n    println!(\"{} {} {}\", b.width, b.height, b.title);\n}\n",
+      "output": "1024 600 window"
+    },
+    {
+      "type": "callout",
+      "tone": "note",
+      "html": "<p>Two shortcuts to read carefully. If a local variable has the same name as the field, writing just <code>title</code> means <code>title: title</code> — that is the field init shorthand. And <code>..a</code> fills any field you did not name from <code>a</code>, so <code>width</code> is overridden while <code>height</code> and <code>title</code> are taken from <code>a</code>. Taken, not copied: those fields <em>move</em> out of <code>a</code>, so a <code>String</code> field leaves <code>a</code> partly moved and unusable as a whole afterwards.</p>"
+    },
+    {
+      "type": "diagram",
+      "title": "inside a Player value",
+      "ascii": "         stack                        heap\n   p     +----------------+\n         | name   ptr ----|-----> \"ada\"\n         |        len   3 |\n         |        cap   3 |\n         | score       10 |\n         +----------------+\n\n   One value with two named fields. The name\n   field carries its own pointer, so Player\n   owns heap memory through it."
+    },
+    {
+      "type": "code",
+      "title": "a tuple struct",
+      "code": "struct Point(i32, i32);\n\nfn main() {\n    let p = Point(3, 4);\n    println!(\"x = {}, y = {}\", p.0, p.1);\n}\n",
+      "output": "x = 3, y = 4"
+    },
+    {
+      "type": "prose",
+      "html": "<p>When the field names would be noise, drop them. A tuple struct keeps the same one-type grouping but reaches its fields by position: <code>p.0</code>, <code>p.1</code>. It is a distinct type — <code>Point(3, 4)</code> and a plain <code>(3, 4)</code> are not interchangeable — which is the point: a <code>Meters(u32)</code> will not accept a <code>Feet(u32)</code>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "impl: associated function and methods",
+      "code": "struct Counter {\n    count: u32,\n}\n\nimpl Counter {\n    fn new() -> Self {\n        Counter { count: 0 }\n    }\n\n    fn value(&self) -> u32 {\n        self.count\n    }\n\n    fn bump(&mut self) {\n        self.count += 1;\n    }\n}\n\nfn main() {\n    let mut c = Counter::new();\n    c.bump();\n    c.bump();\n    println!(\"count = {}\", c.value());\n}\n",
+      "output": "count = 2"
+    },
+    {
+      "type": "prose",
+      "html": "<p>An <code>impl</code> block attaches functions to the type. Inside it, <code>self</code> is the value you were called on, and the sigil in front of it is a borrow from the last chapter: <code>&self</code> reads without taking ownership, <code>&mut self</code> changes the value in place. So <code>c.bump()</code> is sugar for <code>Counter::bump(&mut c)</code>, which is why <code>c</code> has to be <code>mut</code>.</p><p>No <code>self</code> at all means an associated function: it belongs to the type, not to an instance. <code>fn new() -> Self</code> returns a fresh value, and we call it as <code>Counter::new()</code> using <code>::</code>. That is a convention, not a keyword — nothing forces the name <code>new</code>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "printing a struct",
+      "code": "#[derive(Debug)]\nstruct Player {\n    name: String,\n    score: u32,\n}\n\nfn main() {\n    let p = Player {\n        name: String::from(\"ada\"),\n        score: 10,\n    };\n    println!(\"{} {}\", p.name, p.score);\n    println!(\"{:?}\", p);\n    println!(\"{:#?}\", p);\n}\n",
+      "output": "ada 10\nPlayer { name: \"ada\", score: 10 }\nPlayer {\n    name: \"ada\",\n    score: 10,\n}"
+    },
+    {
+      "type": "callout",
+      "tone": "help",
+      "html": "<p><code>println!(\"{}\", p)</code> will not compile for a struct: there is no built-in way to print an arbitrary type. <code>{:?}</code> asks for the <em>debug</em> format instead, which is only available if the type implements <code>Debug</code> — and <code>#[derive(Debug)]</code> above the struct makes the compiler write that implementation for you. <code>{:#?}</code> is the same thing pretty-printed one field per line, which is what you want on a large struct. Printing structs in a custom format is a job for a trait, and traits arrive in chapter 13.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which change makes the line p.score = 25; compile?",
+      "options": ["let mut p = Player { ... };", "let p = mut Player { ... };", "Nothing — fields are always writable"],
+      "answer": 0,
+      "why": "mut belongs on the binding. A struct's fields can only be written through a mut binding, even if the struct type itself is unchanged."
+    },
+    {
+      "q": "What does &self in a method signature mean?",
+      "options": ["The method borrows the value instead of taking ownership", "The method returns a reference to itself", "The method is allowed to modify the value"],
+      "answer": 0,
+      "why": "&self is a shared borrow, so calling the method leaves the caller's value intact. Modifying needs &mut self."
+    },
+    {
+      "q": "How do you call fn new() -> Self when it is defined in impl Player?",
+      "options": ["Player::new()", "new()", "Player.new()"],
+      "answer": 0,
+      "why": "With no self parameter it is an associated function, so it is called on the type with the double colon, not on an instance."
+    }
+  ],
+  "exercise": {
+    "brief": "Define a struct Song with a title: String and a plays: u32. In an impl block give it fn new(title: String) -> Self that starts plays at 0, and fn play(&mut self) that adds one play. In main, create \"echo\", play it twice, then print one line holding the title, the word played, the count, and times, for example: echo played 2 times",
+    "starter": "struct Song {\n    title: String,\n    plays: u32,\n}\n\nimpl Song {\n    // fn new(title: String) -> Self\n    // fn play(&mut self)\n}\n\nfn main() {\n    // build a Song, play it twice, then print the title, played, the count, and times\n}\n",
+    "hint": "fn new(title: String) -> Self { Song { title, plays: 0 } } uses the field init shorthand. play needs &mut self so it can do self.plays += 1. In main the binding must be mutable: let mut song = Song::new(String::from(\"echo\"));",
+    "checks": [
+      { "kind": "outputEquals", "value": "echo played 2 times" }
+    ],
+    "solution": "struct Song {\n    title: String,\n    plays: u32,\n}\n\nimpl Song {\n    fn new(title: String) -> Self {\n        Song { title, plays: 0 }\n    }\n\n    fn play(&mut self) {\n        self.plays += 1;\n    }\n}\n\nfn main() {\n    let mut song = Song::new(String::from(\"echo\"));\n    song.play();\n    song.play();\n    println!(\"{} played {} times\", song.title, song.plays);\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Defining Structs", "href": "book/ch05-01-defining-structs.html" },
+    { "label": "The Book · Method Syntax", "href": "book/ch05-03-method-syntax.html" },
+    { "label": "Rust by Example · Structs", "href": "rust-by-example/custom_types/structs.html" }
+  ]
+}

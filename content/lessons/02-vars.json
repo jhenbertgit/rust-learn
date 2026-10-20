@@ -1,0 +1,99 @@
+{
+  "id": "02-vars",
+  "title": "Bindings that hold values",
+  "minutes": 8,
+  "summary": "One assignment or many: mut, shadowing, and constants.",
+  "keywords": ["let", "mut", "shadowing", "const", "snake_case"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p><code>let</code> creates a <em>binding</em>: a name attached to a value. Most languages call these variables, and for now that word is close enough. The difference worth knowing on day one is that a binding in Rust is not a box you may rewrite whenever you feel like it.</p><p>Give it a name, give it a value, then read it as often as you like.</p>"
+    },
+    {
+      "type": "code",
+      "title": "main.rs",
+      "code": "fn main() {\n    let x = 5;\n    let y = 10;\n    println!(\"{x} + {y} = {}\", x + y);\n}\n",
+      "output": "5 + 10 = 15"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Reading is free. Writing is where Rust asks you to be explicit. A plain <code>let</code> gets exactly one assignment, and the compiler treats a second one as an error rather than as style. When a value genuinely changes during the life of the program, say so at the declaration with <code>mut</code>.</p><p>Names of bindings and functions are <code>snake_case</code>: lowercase words joined by underscores. <code>maxSpeed</code> compiles but warns, and the idiom is <code>max_speed</code>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a value that changes",
+      "code": "fn main() {\n    let mut score = 0;\n    println!(\"start: {score}\");\n    score += 10;\n    println!(\"after bonus: {score}\");\n    score -= 3;\n    println!(\"after penalty: {score}\");\n}\n",
+      "output": "start: 0\nafter bonus: 10\nafter penalty: 7"
+    },
+    {
+      "type": "code",
+      "title": "the same idea without mut",
+      "runnable": false,
+      "code": "fn main() {\n    let score = 10;\n    println!(\"score is {score}\");\n    score = 20;\n    println!(\"score is {score}\");\n}\n"
+    },
+    {
+      "type": "callout",
+      "tone": "warn",
+      "html": "<p>The compiler refuses to build that second program, and it is precise about why: <code>error[E0384]: cannot assign twice to immutable variable</code>. It points at the first assignment, marks the offending line, and offers the fix as a diff.</p><p>Two honest repairs. Declare the binding <code>mut</code> if the value really moves. Or, when you are computing a new value from an old one, use a second <code>let</code>.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A second <code>let</code> with the same name is <em>shadowing</em>. It declares a brand-new binding and hides the old one; nothing is mutated. From that line onward the name means the new value, and because the binding is new, its type may change as well.</p>"
+    },
+    {
+      "type": "code",
+      "title": "shadowing",
+      "code": "fn main() {\n    let level = 3;\n    println!(\"level {level}\");\n    let level = level + 1;\n    println!(\"level {level}\");\n    let level = \"max\";\n    println!(\"level {level}\");\n}\n",
+      "output": "level 3\nlevel 4\nlevel max"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Reassignment and shadowing look alike on the page and do different things. Reassignment, only with <code>mut</code>, changes the value inside one binding. Shadowing creates a second binding, so the name can even land on a different type: same name, different thing. The old value is unreachable but not destroyed.</p><p>Either way the compiler usually works the type out from the value on the right. When you want the type on the page, or when nothing else pins it down, annotate it: <code>let attempts: u64 = 5;</code>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "annotations, inference, and a constant",
+      "code": "const MAX_LEVEL: u32 = 99;\n\nfn main() {\n    let attempts: u64 = 5;\n    let ratio = 0.75;\n    let finished = false;\n    println!(\"{attempts} {ratio} {finished}\");\n    println!(\"level cap is {MAX_LEVEL}\");\n}\n",
+      "output": "5 0.75 false\nlevel cap is 99"
+    },
+    {
+      "type": "callout",
+      "tone": "note",
+      "html": "<p><code>MAX_LEVEL</code> at the top is a <code>const</code>, not a binding. Three rules: it needs a type annotation, its name is <code>SCREAMING_CASE</code>, and <code>mut</code> is not allowed, so the compiler rejects <code>const mut</code> outright. A constant is folded into the program at compile time. Bindings are the working values inside <code>main</code>; constants are the facts it works with.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which line fails to compile?",
+      "options": ["let x = 1; x = 2;", "let mut x = 1; x = 2;", "let x = 1; let x = 2;"],
+      "answer": 0,
+      "why": "A plain let is immutable, so assigning twice gives error E0384. The mutable version is allowed, and the third line is shadowing, which needs no mut."
+    },
+    {
+      "q": "What does this print? let x = 5; let x = x + 1; println!(\"{x}\");",
+      "options": ["6", "5", "it does not compile"],
+      "answer": 0,
+      "why": "The second let shadows the first, and its initializer may read the old x before the new binding takes over. 5 + 1 is 6."
+    },
+    {
+      "q": "Which line declares a valid constant?",
+      "options": ["const MAX_ROUNDS: u32 = 5;", "const mut MAX_ROUNDS: u32 = 5;", "const MAX_ROUNDS = 5;"],
+      "answer": 0,
+      "why": "A const requires a type annotation and can never be mutable. Dropping the annotation is an error, not an inference opportunity."
+    }
+  ],
+  "exercise": {
+    "brief": "Start with a counter called total at 0. Add 5 to it and print it, then add 10 more to the same binding and print it again.",
+    "starter": "fn main() {\n    let total = 0;\n    // make the binding mutable, then add 5 and print, then add 10 and print\n\n}\n",
+    "hint": "Change the first line to let mut total = 0; and use total += 5; before each println! call. Two calls, two lines of output.",
+    "checks": [
+      { "kind": "outputEquals", "value": "5\n15" }
+    ],
+    "solution": "fn main() {\n    let mut total = 0;\n    total += 5;\n    println!(\"{total}\");\n    total += 10;\n    println!(\"{total}\");\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Variables and Mutability", "href": "book/ch03-01-variables-and-mutability.html" },
+    { "label": "Error index · E0384", "href": "error_codes/E0384.html" },
+    { "label": "Rust by Example · Variable bindings", "href": "rust-by-example/variable_bindings.html" }
+  ]
+}

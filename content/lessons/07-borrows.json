@@ -1,0 +1,100 @@
+{
+  "id": "07-borrows",
+  "title": "References and borrowing",
+  "minutes": 12,
+  "summary": "Lend a value instead of giving it away, under rules the compiler checks.",
+  "keywords": ["references", "borrow", "&mut", "slices", "&str"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>The last chapter ended on a problem: handing a <code>String</code> to a function gave it away for good. The fix is to lend it instead. A reference is a pointer to a value that somebody else still owns, and the compiler tracks the loan from beginning to end.</p><p><code>&T</code> is a shared reference. It reads the value without taking it, without copying it, and without ever freeing it. The owner at the call site does not move.</p>"
+    },
+    {
+      "type": "code",
+      "title": "borrow instead of take",
+      "code": "fn measure(s: &String) -> usize {\n    s.len()\n}\n\nfn main() {\n    let name = String::from(\"ferris\");\n    let n = measure(&name);\n    println!(\"{n} {name}\");\n}\n",
+      "output": "6 ferris"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Two marks do the work: <code>&String</code> in the signature says the parameter is a borrow, and <code>&name</code> at the call site says we are lending it. Inside the function, <code>s</code> is used exactly like a string — <code>s.len()</code> just works.</p><p>When <code>measure</code> returns, the loan is over and <code>s</code> ceases to exist. <code>name</code> never lost ownership, no heap bytes were touched, and the last line prints both values. That is the whole trick: nobody paid for a copy.</p>"
+    },
+    {
+      "type": "code",
+      "title": "change it through a borrow",
+      "code": "fn add_period(s: &mut String) {\n    s.push_str(\".\");\n}\n\nfn main() {\n    let mut greeting = String::from(\"hello\");\n    add_period(&mut greeting);\n    add_period(&mut greeting);\n    println!(\"{greeting}\");\n}\n",
+      "output": "hello.."
+    },
+    {
+      "type": "prose",
+      "html": "<p>A mutable reference is written <code>&mut T</code>. It lets the borrower change the value in place, so the owner must be declared <code>mut</code>, and the call site writes <code>&mut</code> to make the borrowing visible. Changing data through <code>&mut</code> is free: the string is edited where it already lives.</p><p>Now the rule that follows. At any moment, a value has <strong>either</strong> any number of shared references <code>&T</code>, <strong>or</strong> exactly one mutable reference <code>&mut T</code>. Never both at once, and never two mutable at once. That single sentence is what the borrow checker enforces.</p>"
+    },
+    {
+      "type": "diagram",
+      "title": "many readers, or exactly one writer",
+      "ascii": "  fine: many readers at once\n     &s -->\\\n            +--> [ \"hi\" ]   owned by s\n     &s -->/\n\n  fine: one writer\n     &mut s -------> [ \"hi\" ]   nobody else is looking\n\n  refused: a writer joins the readers\n     &s -->\\\n            +--> [ \"hi\" ]\n     &mut s ------>  ^ cannot borrow as mutable"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Write the refused case and the compiler quotes the rule back at you:</p><p><code>error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable<br>  |<br>3 |     let a = &s;<br>  |             -- immutable borrow occurs here<br>5 |     let c = &mut s;<br>  |             ^^^^^^ mutable borrow occurs here<br>6 |     println!(\"{a} {b} {c}\");<br>  |                - immutable borrow later used here</code></p><p>Two mutable references get their own number, <code>E0499: cannot borrow `s` as mutable more than once at a time</code>. The motivation is not bookkeeping. A reader holding a pointer while a writer grows the string is a use-after-free in C; here that state simply cannot be written down.</p>"
+    },
+    {
+      "type": "code",
+      "title": "sequential is always fine",
+      "code": "fn main() {\n    let mut text = String::from(\"hi\");\n    let a = &text;\n    println!(\"first look: {a}\");\n\n    let b = &mut text;\n    b.push_str(\"!\");\n    println!(\"now: {b}\");\n}\n",
+      "output": "first look: hi\nnow: hi!"
+    },
+    {
+      "type": "prose",
+      "html": "<p>That compiles, and it is not a special case. A borrow lasts until its last use, not until the end of the block. <code>a</code> is used on the third line and never again, so the shared loan ends there; the mutable loan on the fifth line begins with nobody reading. Restricting access in time rather than in code shape is what makes the rule livable.</p><p>The other half of the guarantee is that a reference can never outlive its value. If you try to return a reference to a local variable, the compiler answers <code>error[E0515]: cannot return reference to local variable `s`</code> — the value dies with its function, so the loan would dangle. Rust refuses to compile it instead of hoping you notice.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>References also let us talk about <em>part</em> of a value. Index a string with a range and prefix it with <code>&</code> and you get a slice: a reference to those bytes, with no copy made. The range is half-open, so <code>0..2</code> means bytes 0 and 1. <code>&word[..]</code> is the whole string as a slice.</p><p>A slice of a string has type <code>&str</code> — a pointer and a length that own nothing. It supports <code>.len()</code> just like <code>&String</code> does, and it is what every well-behaved Rust function asks for when it only needs to read text.</p>"
+    },
+    {
+      "type": "code",
+      "title": "slices, and handing one back",
+      "code": "fn first_two(s: &str) -> &str {\n    &s[0..2]\n}\n\nfn main() {\n    let word = String::from(\"hello\");\n    let part = &word[0..2];\n    let whole = &word[..];\n    println!(\"{part} {whole} {}\", part.len());\n    println!(\"{}\", first_two(&word));\n}\n",
+      "output": "he hello 2\nhe"
+    },
+    {
+      "type": "prose",
+      "html": "<p>None of that is magic. The compiler has been tracking who owns which bytes since the first line of the chapter, so it knows that <code>part</code> may read the two bytes <code>word</code> owns, that <code>first_two</code> may hand back a slice of its input because the input outlives the loan, and that nothing needs cloning.</p><p>Practical habit, then: if a function only needs to read a string, take <code>&str</code>. If it needs to change one, take <code>&mut String</code>. Take <code>String</code> only when you really want to keep it. Almost nothing you write in the rest of this book needs the clone that the last chapter forced on you.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "What does the parameter type in fn measure(s: &String) mean for the caller?",
+      "options": ["The function reads the string and the caller keeps ownership", "The function takes ownership and frees the string", "The string is copied into the function"],
+      "answer": 0,
+      "why": "&String is a shared borrow: a pointer the callee may read through. The owner keeps the value and no bytes are duplicated."
+    },
+    {
+      "q": "Which situation does the borrow checker reject?",
+      "options": ["Two shared references in use at the same time", "A mutable reference and a shared reference in use at the same time", "A shared reference used, finished, then a mutable one"],
+      "answer": 1,
+      "why": "The rule is any number of shared references or exactly one mutable reference, never both at once. Sequential borrows are fine because a borrow ends at its last use."
+    },
+    {
+      "q": "With let mut s = String::from(\"hello\"); what is the value of &s[0..2]?",
+      "options": ["A &str slice that points into the existing bytes", "A new String that owns a copy of \"he\"", "The two characters as a tuple of char"],
+      "answer": 0,
+      "why": "A slice borrows a range of the original bytes. It is a pointer plus a length, it owns nothing, and its type is &str."
+    }
+  ],
+  "exercise": {
+    "brief": "Write add_bang so it pushes one '!' onto the end of the borrowed string. Then call it twice on text in main and print the result.",
+    "starter": "fn add_bang(s: &mut String) {\n    // push one ! onto the end of s\n}\n\nfn main() {\n    let mut text = String::from(\"hi\");\n    // call add_bang twice, then print text\n}\n",
+    "hint": "Inside add_bang, s is already a mutable borrow, so s.push('!'); is enough — no asterisk, no reassignment. At the call site you must pass &mut text.",
+    "checks": [
+      { "kind": "outputEquals", "value": "hi!!" }
+    ],
+    "solution": "fn add_bang(s: &mut String) {\n    s.push('!');\n}\n\nfn main() {\n    let mut text = String::from(\"hi\");\n    add_bang(&mut text);\n    add_bang(&mut text);\n    println!(\"{text}\");\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · References and Borrowing", "href": "book/ch04-02-references-and-borrowing.html" },
+    { "label": "The Book · The Slice Type", "href": "book/ch04-03-slices.html" },
+    { "label": "Error E0499", "href": "error_codes/E0499.html" }
+  ]
+}

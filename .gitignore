@@ -1,0 +1,11 @@
+# dev-only
+tools/node_modules/
+.npm-cache/
+package-lock.json
+tools/package-lock.json
+
+# compile scratch space
+run-tmp/
+
+# static build output (produced by scripts/build-static.mjs, published by CI)
+dist/

@@ -1,0 +1,103 @@
+{
+  "id": "06-moves",
+  "title": "Ownership: values move",
+  "minutes": 12,
+  "summary": "Every value has one owner. Assignment and calls hand that ownership over.",
+  "keywords": ["ownership", "move", "clone", "drop", "Copy"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Ownership is the idea that makes Rust different from every language you already know, and it is three rules:</p><ul><li>Every value has exactly one variable that owns it.</li><li>The owner is a scope: the block where the value was created.</li><li>When the owner goes out of scope, the value is freed.</li></ul><p>None of this is a runtime check. The compiler knows where every value lives and where it dies, and it refuses to build a program where that story does not add up. This chapter is the one to read twice.</p>"
+    },
+    {
+      "type": "code",
+      "title": "one owner",
+      "code": "fn main() {\n    let s = String::from(\"hi\");\n    println!(\"{s}\");\n}\n",
+      "output": "hi"
+    },
+    {
+      "type": "diagram",
+      "title": "let s = String::from(\"hi\");",
+      "ascii": "        stack                          heap\n  s     +-----------------+\n        | ptr  -----------|----->  +----+----+\n        | len         2   |        | h  | i  |\n        | capacity    2   |        +----+----+\n        +-----------------+\n\n  The name s owns a 24-byte struct on the stack,\n  and that struct owns 2 bytes on the heap."
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>s</code> itself is small and fixed in size: a pointer, a length, a capacity. The characters live on the heap, because how many there are is only known at run time. <code>s</code> <em>owns</em> those two heap bytes, which means <code>s</code> is the one responsible for freeing them.</p><p>The responsibility is discharged when the scope ends. When <code>s</code> goes out of scope, Rust <em>drops</em> it: the heap bytes are freed and the name is retired. Several values in one scope are dropped in reverse order of declaration, the way a stack of plates comes back down.</p>"
+    },
+    {
+      "type": "code",
+      "title": "assignment moves",
+      "code": "fn main() {\n    let a = String::from(\"hi\");\n    let b = a;\n    println!(\"{b}\");\n}\n",
+      "output": "hi"
+    },
+    {
+      "type": "prose",
+      "html": "<p>That assignment does not copy the string. It <em>moves</em> it: the pointer, length, and capacity are handed over to <code>b</code>, and <code>a</code> stops being a name for anything. No heap bytes were duplicated, and there is still exactly one owner.</p><p>So using <code>a</code> afterwards is a compile error, not a surprise at run time:</p><p><code>error[E0382]: borrow of moved value: `a`<br>  |<br>2 |     let a = String::from(\"hi\");<br>  |         - move occurs because `a` has type `String`, which does not implement the `Copy` trait<br>3 |     let b = a;<br>  |             - value moved here<br>5 |     println!(\"{a}\");<br>  |                ^ value borrowed here after move</code></p><p>The compiler even offers to clone. Hold that thought for a few blocks.</p>"
+    },
+    {
+      "type": "code",
+      "title": "into a function, and back out",
+      "code": "fn shout(mut text: String) -> String {\n    text.push_str(\"!\");\n    text\n}\n\nfn main() {\n    let name = String::from(\"ferris\");\n    let loud = shout(name);\n    // println!(\"{name}\"); would be E0382 all over again\n    println!(\"{loud}\");\n}\n",
+      "output": "ferris!"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Calling a function behaves like assignment. <code>shout(name)</code> moves the string into the parameter <code>text</code>, so <code>name</code> is dead at the call site; returning <code>text</code> moves it out again into <code>loud</code>. The value is never copied, only passed hand to hand.</p><p>That is why <code>clone()</code> exists. When you truly need two independent strings, it performs a deep copy with fresh heap bytes, and it is spelled out because it is not free. <code>drop(x)</code> is the other half of the contract: it takes ownership right there and frees the value immediately, instead of waiting for the end of the scope.</p>"
+    },
+    {
+      "type": "code",
+      "title": "clone and drop",
+      "code": "fn main() {\n    let a = String::from(\"hi\");\n    let b = a.clone();\n    println!(\"{a} and {b}\");\n    drop(b);\n    println!(\"{a} is still alive\");\n}\n",
+      "output": "hi and hi\nhi is still alive"
+    },
+    {
+      "type": "code",
+      "title": "types that are copied instead",
+      "code": "fn main() {\n    let x = 5;\n    let y = x;\n    println!(\"x = {x}, y = {y}\");\n\n    let flag = true;\n    let again = flag;\n    println!(\"{flag} {again}\");\n\n    let point = (3, 'z');\n    let copy = point;\n    println!(\"{point:?} {copy:?}\");\n}\n",
+      "output": "x = 5, y = 5\ntrue true\n(3, 'z') (3, 'z')"
+    },
+    {
+      "type": "callout",
+      "tone": "note",
+      "html": "<p>Why is <code>let y = x;</code> allowed for an integer but not for a <code>String</code>? Integers, floats, <code>bool</code>, <code>char</code>, and tuples built only from those implement <code>Copy</code>. Their bytes live entirely on the stack, so the assignment is one cheap bitwise copy and both names stay valid. The ownership rule is not weakened: after the copy there are two values with two owners, never one value with two claimants. <code>String</code> cannot implement <code>Copy</code> because it owns heap memory — copying the struct alone would leave two owners of one allocation, which is exactly the double free that ownership exists to prevent.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Moves are tidy, and they hurt. Every call that accepts a <code>String</code> eats it. To keep using the value you either clone it — paying for a copy on every call — or thread it back out through return types until the code is nothing but <code>let name = shout(name);</code> repeated everywhere.</p><p>That is not how real Rust looks. Real Rust <em>lends</em> a value to a function and keeps the owner at home, and the compiler needs no clone and loses no safety. That lending mechanism is the next chapter, and it exists precisely because moves alone are this painful.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "After let a = String::from(\"hi\"); let b = a; which name owns the string?",
+      "options": ["b only", "a only", "both a and b"],
+      "answer": 0,
+      "why": "Assignment moves the value. a no longer names anything, so printing a would be error E0382. There is always exactly one owner."
+    },
+    {
+      "q": "You need two usable copies of a String. Which line is correct?",
+      "options": ["let b = a.clone();", "let b = a;", "let b = a + a;"],
+      "answer": 0,
+      "why": "clone() is the explicit deep copy: new heap bytes, new owner. Plain assignment moves, leaving a unusable."
+    },
+    {
+      "q": "let x = 5; let y = x; and then printing x compiles. Why?",
+      "options": ["i32 is Copy, so x was copied rather than moved", "The compiler clones small values for you", "x was moved, but numbers can be read twice"],
+      "answer": 0,
+      "why": "Copy types hold all their bytes on the stack, so the assignment duplicates them and both names stay valid. There are two values with two owners, which the one-owner rule allows."
+    }
+  ],
+  "exercise": {
+    "brief": "Finish longer so it takes ownership of a String, pushes the text \" and more\" onto the end of it, and hands it back. main then prints the returned value.",
+    "starter": "fn longer(text: String) -> String {\n    // take ownership of `text`, change it, hand it back\n    text\n}\n\nfn main() {\n    let base = String::from(\"hello\");\n    let full = longer(base);\n    println!(\"{full}\");\n}\n",
+    "hint": "The parameter needs mut to be changed: write it as mut text: String. Then add to the end of it with text.push_str(\" and more\"); and return text as the last expression.",
+    "checks": [
+      { "kind": "outputEquals", "value": "hello and more" }
+    ],
+    "solution": "fn longer(mut text: String) -> String {\n    text.push_str(\" and more\");\n    text\n}\n\nfn main() {\n    let base = String::from(\"hello\");\n    let full = longer(base);\n    println!(\"{full}\");\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · What Is Ownership?", "href": "book/ch04-01-what-is-ownership.html" },
+    { "label": "Rust by Example · Move semantics", "href": "rust-by-example/scope/move.html" },
+    { "label": "Error E0382", "href": "error_codes/E0382.html" }
+  ]
+}

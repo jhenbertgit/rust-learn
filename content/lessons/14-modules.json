@@ -1,0 +1,93 @@
+{
+  "id": "14-modules",
+  "title": "Real projects and tests",
+  "minutes": 12,
+  "summary": "Modules, the Cargo layout, the commands you type daily, and tests that run.",
+  "keywords": ["mod", "pub", "use", "crate", "super", "cargo", "test", "assert_eq", "should_panic"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Everything so far has been one file. A real project is a folder Cargo manages. <code>Cargo.toml</code> is its manifest: <code>name</code>, <code>version</code>, and <code>edition</code> — <code>2021</code> for everything in this book. The <code>src/</code> folder holds the code. <code>src/main.rs</code> is the binary's entry point, and <code>src/lib.rs</code> is the library that other files hang off. A project may have both, and most real ones do: the binary stays thin and the logic lives in the library where tests can reach it.</p>"
+    },
+    {
+      "type": "diagram",
+      "title": "what a Cargo project looks like",
+      "ascii": "myapp/\n  Cargo.toml        name, version, edition\n  src/\n    main.rs         fn main: the binary\n    lib.rs          the library\n    parser.rs       one module of the library\n  tests/\n    parser.rs       integration tests\n  target/           build output (never edit)\n"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Inside a file, <code>mod name { ... }</code> starts a module: a block with its own namespace. Everything in it is <strong>private</strong> until you write <code>pub</code>, and private means parent code cannot reach it at all — not \"should not\", cannot. That is how Rust keeps an implementation detail from quietly becoming somebody else's dependency.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a module with a private helper",
+      "code": "mod math {\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n\n    // private: only reachable from inside this module\n    fn offset() -> i32 {\n        1\n    }\n\n    pub fn double_plus_one(n: i32) -> i32 {\n        double(n) + offset()\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::double(21));\n    println!(\"{}\", crate::math::double_plus_one(20));\n}\n",
+      "output": "42\n41"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Paths name items. <code>crate::</code> starts from this crate's root, <code>super::</code> means the parent module, <code>self::</code> the current one. <code>use</code> writes a path once and then the short name works — it is an alias, not an include, so an unused <code>use</code> is a warning, not dead weight. Modules nest, and each level keeps its own privacy:</p>"
+    },
+    {
+      "type": "code",
+      "title": "nested modules, use, and super",
+      "code": "mod outer {\n    pub fn tag() -> &'static str {\n        \"outer\"\n    }\n\n    pub mod inner {\n        // super:: is the parent module\n        pub fn tag() -> String {\n            format!(\"{}-inner\", super::tag())\n        }\n    }\n}\n\nuse crate::outer::inner::tag;\n\nfn main() {\n    println!(\"{}\", tag());\n    println!(\"{}\", crate::outer::tag());\n}\n",
+      "output": "outer-inner\nouter"
+    },
+    {
+      "type": "callout",
+      "tone": "note",
+      "html": "<p>The commands you will type every day. <code>cargo run</code> builds and runs. <code>cargo build --release</code> builds an optimized binary into <code>target/release/</code>. <code>cargo check</code> type-checks without writing a binary — the one to run in a loop while thinking. <code>cargo test</code> builds and runs every test. <code>cargo doc --open</code> builds documentation for your crate and its dependencies and opens it. <code>rustup doc</code> opens the offline bookshelf this course links into.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A test is a function marked <code>#[test]</code>, normally collected in a <code>#[cfg(test)] mod tests</code> at the bottom of the file it tests; <code>cfg(test)</code> means the module is compiled only for tests, so it costs nothing in a release build. <code>assert_eq!(a, b)</code> checks that two values are equal, <code>assert!(cond)</code> checks one condition, and <code>#[should_panic]</code> marks a test that is supposed to panic — useful when panicking is the documented behavior. Files in <code>tests/</code> are integration tests: they use your crate the way a user would.</p>"
+    },
+    {
+      "type": "code",
+      "title": "tests that run",
+      "mode": "test",
+      "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn divide(a: i32, b: i32) -> i32 {\n    if b == 0 {\n        panic!(\"cannot divide by zero\");\n    }\n    a / b\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn adds_two_numbers() {\n        assert_eq!(add(2, 3), 5);\n    }\n\n    #[test]\n    fn adds_a_negative_number() {\n        let total = add(-4, 1);\n        assert!(total < 0);\n    }\n\n    #[test]\n    #[should_panic(expected = \"cannot divide by zero\")]\n    fn dividing_by_zero_panics() {\n        divide(1, 0);\n    }\n}\n",
+      "output": "running 3 tests\ntest tests::adds_a_negative_number ... ok\ntest tests::adds_two_numbers ... ok\ntest tests::dividing_by_zero_panics - should panic ... ok\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+    },
+    {
+      "type": "prose",
+      "html": "<p>That is the shape of a real project: a manifest, modules with a deliberate public surface, and tests next to the code they cover. You have now seen all of it — values, ownership, the types you build, collections, failure, traits, and a project that compiles.</p><p>What next depends on what you are writing. <strong>The Book</strong> is the long-form version of this course: read it from chapter 12 onward and it takes the detours we skipped — a real I/O project, smart pointers, concurrency, patterns. If you would rather read programs than prose, <strong>Rust by Example</strong> has every idea above as a runnable file. And keep <code>rustup doc</code> one keystroke away: it opens the same bookshelf offline, and the standard library page has a search box that answers \"what is this method called\" faster than any search engine.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "An item sits inside mod parse with no pub in front of it. Who can use it?",
+      "options": ["Code in that module and in modules nested inside it", "Any code in the crate", "Any other crate that depends on this one"],
+      "answer": 0,
+      "why": "Privacy is the default and it flows inward: the module and its children can see the item, the parent cannot. pub is what opens it up one level at a time."
+    },
+    {
+      "q": "Which command type-checks the project and reports errors without producing a binary?",
+      "options": ["cargo check", "cargo run", "cargo build --release"],
+      "answer": 0,
+      "why": "cargo check stops after analysis, so it is much faster than a build. That is why it is the command people keep running while they think."
+    },
+    {
+      "q": "Where does a file belong so that it is an integration test rather than a unit test?",
+      "options": ["In the tests/ folder at the top of the project", "In src/, next to the code it tests", "Anywhere, as long as it ends in .rs"],
+      "answer": 0,
+      "why": "Files in tests/ are compiled as their own crates that link your library and call it like an external user would. Unit tests live inside src/ behind #[cfg(test)]."
+    }
+  ],
+  "exercise": {
+    "brief": "Add a public triple function to the math module that returns n times 3 — then uncomment the last line in main so the program prints it.",
+    "starter": "mod math {\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n\n    fn offset() -> i32 {\n        1\n    }\n\n    pub fn double_plus_one(n: i32) -> i32 {\n        double(n) + offset()\n    }\n\n    // add triple here\n}\n\nfn main() {\n    println!(\"{}\", math::double(21));\n    println!(\"{}\", math::double_plus_one(20));\n    // println!(\"triple = {}\", math::triple(7));\n}\n",
+    "hint": "Inside the module, write pub fn triple(n: i32) -> i32 { n * 3 }. Without pub, main cannot see it: private items are invisible to the code outside their module.",
+    "checks": [
+      { "kind": "compiles" },
+      { "kind": "outputContains", "value": "triple = 21" }
+    ],
+    "solution": "mod math {\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n\n    fn offset() -> i32 {\n        1\n    }\n\n    pub fn double_plus_one(n: i32) -> i32 {\n        double(n) + offset()\n    }\n\n    pub fn triple(n: i32) -> i32 {\n        n * 3\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::double(21));\n    println!(\"{}\", math::double_plus_one(20));\n    println!(\"triple = {}\", math::triple(7));\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Modules and privacy", "href": "book/ch07-02-defining-modules-to-control-scope-and-privacy.html" },
+    { "label": "The Book · Writing tests", "href": "book/ch11-01-writing-tests.html" },
+    { "label": "The Book · More about Cargo", "href": "book/ch14-00-more-about-cargo.html" }
+  ]
+}

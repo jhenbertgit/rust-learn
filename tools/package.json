@@ -1,0 +1,12 @@
+{
+  "name": "rust-hands-on-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tooling (DOM smoke test). The course itself has no dependencies.",
+  "devDependencies": {
+    "jsdom": "^30.1.3"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rust, hands on</title>
+<meta name="description" content="An offline, interactive Rust course: fourteen chapters, real compiler, runnable examples.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#lesson-body">Skip to chapter</a>
+
+<header class="rail">
+  <button class="rail-menu" id="btn-toc" aria-expanded="false" aria-controls="toc">
+    <span class="rail-menu-bars" aria-hidden="true"></span>
+    <span class="rail-menu-text">Chapters</span>
+  </button>
+
+  <a class="brand" href="#/" aria-label="Rust, hands on — chapter one">
+    <span class="brand-mark" aria-hidden="true">//</span>
+    <span class="brand-name">Rust, hands on</span>
+  </a>
+
+  <div class="rail-progress" id="rail-progress" aria-label="Course progress"></div>
+
+  <div class="rail-meta">
+    <span id="rail-count" class="rail-count">0 / 14</span>
+    <span id="rail-toolchain" class="rail-toolchain" title="Compiler used by the Run button">rustc</span>
+  </div>
+
+  <div class="rail-actions">
+    <label class="search">
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="search-input" type="search" placeholder="Find a chapter" aria-label="Find a chapter" autocomplete="off">
+      <kbd class="search-hint">/</kbd>
+      <div class="search-results" id="search-results" role="listbox" aria-label="Chapter results" hidden></div>
+    </label>
+    <a class="ghost-btn" href="#/shelf">Bookshelf</a>
+  </div>
+</header>
+
+<div class="shell" id="shell">
+  <aside class="toc" id="toc" aria-label="Chapters"></aside>
+
+  <main class="lesson" id="lesson-body" tabindex="-1"></main>
+
+  <section class="bench" id="bench" aria-label="Workbench">
+    <div class="bench-bar">
+      <div class="bench-tabs">
+        <span class="bench-tab" id="bench-filename">main.rs</span>
+        <span class="bench-mode" id="bench-mode">bin</span>
+      </div>
+      <div class="bench-status" id="bench-status" aria-live="polite"></div>
+      <button class="bench-close" id="btn-bench-close" aria-label="Close workbench">Close</button>
+    </div>
+
+    <div class="bench-editor-wrap">
+      <div class="gutter" id="gutter" aria-hidden="true"></div>
+      <div class="editor-scroll" id="editor-scroll">
+        <pre class="hl" id="editor-hl" aria-hidden="true"><code></code></pre>
+        <textarea id="editor" class="editor" spellcheck="false" wrap="off"
+                  autocapitalize="off" autocorrect="off" autocomplete="off"
+                  aria-label="Rust source code"></textarea>
+      </div>
+    </div>
+
+    <div class="bench-actions">
+      <button class="btn btn-run" id="btn-run">
+        Run<span class="btn-key">Ctrl ↵</span>
+      </button>
+      <button class="btn" id="btn-check">Check exercise</button>
+      <button class="btn btn-quiet" id="btn-reset">Reset</button>
+      <button class="btn btn-quiet" id="btn-solution">Solution</button>
+    </div>
+
+    <div class="bench-out" id="bench-out">
+      <div class="bench-out-empty">
+        <p>Run a snippet and the compiler's answer lands here.</p>
+        <p class="bench-out-sub">Compiled with the rustc on this machine, then executed. Nothing is simulated.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<noscript>
+  <p style="padding:2rem;font-family:system-ui">This course needs JavaScript: the compiler bridge and the chapter renderer run in your browser.</p>
+</noscript>
+
+<script src="js/highlight.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

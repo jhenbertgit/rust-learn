@@ -1,0 +1,74 @@
+{
+  "title": "Rust, hands on",
+  "intro": "Fourteen short chapters that take you from your first println to structs, ownership, and real Cargo projects. Every example in this book is compiled by the Rust compiler installed on this machine — when you press Run, nothing is simulated.",
+  "modules": [
+    {
+      "id": "engine",
+      "numeral": "01",
+      "title": "Start the engine",
+      "blurb": "A program that runs, and bindings that hold values.",
+      "lessons": ["01-hello", "02-vars"]
+    },
+    {
+      "id": "types",
+      "numeral": "02",
+      "title": "Types and shapes",
+      "blurb": "Numbers, functions, and the control flow that drives them.",
+      "lessons": ["03-types", "04-funcs", "05-flow"]
+    },
+    {
+      "id": "ownership",
+      "numeral": "03",
+      "title": "Ownership",
+      "blurb": "The three rules that make Rust Rust. Read this twice.",
+      "lessons": ["06-moves", "07-borrows"]
+    },
+    {
+      "id": "own-types",
+      "numeral": "04",
+      "title": "Types you build",
+      "blurb": "Structs group data. Enums choose between shapes.",
+      "lessons": ["08-structs", "09-enums"]
+    },
+    {
+      "id": "collections",
+      "numeral": "05",
+      "title": "Collections and iteration",
+      "blurb": "Vectors, strings, maps, and chaining transformations.",
+      "lessons": ["10-collections", "11-iterators"]
+    },
+    {
+      "id": "failure",
+      "numeral": "06",
+      "title": "When things fail",
+      "blurb": "Panics, Results, and the question mark operator.",
+      "lessons": ["12-errors"]
+    },
+    {
+      "id": "abstraction",
+      "numeral": "07",
+      "title": "Sharing behavior",
+      "blurb": "Traits and generics: one function, many types.",
+      "lessons": ["13-traits"]
+    },
+    {
+      "id": "projects",
+      "numeral": "08",
+      "title": "Real projects",
+      "blurb": "Modules, Cargo layout, tests, and where to go next.",
+      "lessons": ["14-modules"]
+    }
+  ],
+  "afterword": {
+    "title": "Keep going",
+    "body": "You now have the vocabulary the rest of the Rust bookshelves assume. The Book is the long-form reference for everything here; Rust by Example is the same ideas as runnable programs; the Nomicon is for the day you write unsafe code; the API documentation is where you will spend most of your actual working life.",
+    "links": [
+      { "label": "The Rust Programming Language", "href": "book/index.html", "note": "the long-form course" },
+      { "label": "Rust by Example", "href": "rust-by-example/index.html", "note": "every concept as a program" },
+      { "label": "Standard library API", "href": "std/index.html", "note": "with its own search box" },
+      { "label": "The Rust Reference", "href": "reference/index.html", "note": "the grammar and semantics" },
+      { "label": "Error codes", "href": "error_codes/index.html", "note": "when the compiler shouts E0382" },
+      { "label": "The Cargo Book", "href": "cargo/index.html", "note": "packages, workspaces, publishing" }
+    ]
+  }
+}

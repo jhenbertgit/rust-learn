@@ -1,0 +1,104 @@
+{
+  "id": "12-errors",
+  "title": "When things fail",
+  "minutes": 11,
+  "summary": "Panics for bugs, Result for the failures you can plan for, and the ? operator.",
+  "keywords": ["panic", "unwrap", "expect", "Result", "Ok", "Err", "question mark", "parse"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Two different things can go wrong in a program. There are <em>bugs</em>: our own code is wrong, or a promise we made to ourselves has been broken. And there are <em>legitimate failures</em>: the user typed letters into a field that wants a number, the file we expected is not on disk. Rust gives each one its own tool, and mixing them up is the fastest way to write a program nobody can debug.</p>"
+    },
+    {
+      "type": "code",
+      "title": "panic.rs",
+      "code": "fn main() {\n    println!(\"reading the config\");\n    panic!(\"no config file found\");\n}\n"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A <code>panic!</code> is Rust giving up on this program. The message goes to standard error, not standard output, and the process exits with a nonzero code:</p><p><code>thread 'main' (4276) panicked at main.rs:3:5:</code><br><code>no config file found</code><br><code>note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</code></p><p>The number in parentheses is the thread id and changes on every run; the rest is fixed. A backtrace is the chain of calls that led here — the note tells you how to ask for one. There is no recovering from this point in the program.</p>"
+    },
+    {
+      "type": "code",
+      "title": "unwrap and expect",
+      "code": "fn main() {\n    let good: i32 = \"42\".parse().unwrap();\n    let also_good: i32 = \"7\".parse().expect(\"the seed must be a number\");\n    println!(\"{good} and {also_good}\");\n}\n",
+      "output": "42 and 7"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>unwrap()</code> and <code>expect(msg)</code> say the same thing — give me the value or panic — and differ only in the message. <code>unwrap</code> panics with the standard text, <code>called `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }</code>; <code>expect</code> panics with your sentence, and six months from now that sentence is the only clue you get. Use <code>expect</code>.</p><p>A panic ends the program, which is a rude answer to bad input. For failures we can plan for, Rust makes the failure a value: <code>parse</code> returns <code>Result&lt;i32, ParseIntError&gt;</code>, and a <code>Result</code> is either <code>Ok(value)</code> or <code>Err(error)</code>. It is an enum, so <code>match</code> reads it.</p>"
+    },
+    {
+      "type": "code",
+      "title": "matching a Result",
+      "code": "fn main() {\n    let inputs = [\"42\", \"forty-two\"];\n\n    for text in inputs {\n        let parsed: Result<i32, std::num::ParseIntError> = text.parse();\n        match parsed {\n            Ok(n) => println!(\"{text} is the number {n}\"),\n            Err(e) => println!(\"{text} is not a number: {e}\"),\n        }\n    }\n}\n",
+      "output": "42 is the number 42\nforty-two is not a number: invalid digit found in string"
+    },
+    {
+      "type": "diagram",
+      "title": "Result is a shape with two boxes",
+      "ascii": "        Result<T, E>\n+----------------------+   +----------------------+\n| Ok(value)            |   | Err(error)           |\n| the number we wanted |   | why it did not work  |\n+----------------------+   +----------------------+\n\nnever both. A match opens one box or the other."
+    },
+    {
+      "type": "prose",
+      "html": "<p>Writing a <code>match</code> at every step gets old fast. The <code>?</code> operator does it for you: on an <code>Ok</code> it unwraps the value and carries on; on an <code>Err</code> it returns that error from the function immediately. The catch is that the function using <code>?</code> must itself return a <code>Result</code> — there has to be somewhere for the error to go.</p>"
+    },
+    {
+      "type": "code",
+      "title": "the ? operator",
+      "code": "fn double_number(text: &str) -> Result<i32, std::num::ParseIntError> {\n    let n: i32 = text.parse()?;\n    Ok(n * 2)\n}\n\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    println!(\"{}\", double_number(\"21\")?);\n    println!(\"{}\", double_number(\"10\")?);\n    Ok(())\n}\n",
+      "output": "42\n20"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>fn main()</code> may return a <code>Result</code>, which is why <code>?</code> is legal there. <code>()</code> is the success value — main has nothing to hand back — and <code>Box&lt;dyn std::error::Error&gt;</code> means any error type at all. <code>dyn</code> is a trait object; lesson 13 is where traits get their turn. Read it for now as \"whatever went wrong\": a failed <code>?</code> in main prints <code>Error: ParseIntError { kind: InvalidDigit }</code> and exits nonzero.</p><p>Three helpers never panic. <code>unwrap_or(fallback)</code> gives the value or a default. <code>unwrap_or_else(closure)</code> calls the closure only when there was an error, so the fallback can log the reason. <code>ok()</code> throws the error away and leaves an <code>Option&lt;T&gt;</code> — <code>Some(value)</code> or <code>None</code> — for when you only care whether a value came out.</p>"
+    },
+    {
+      "type": "code",
+      "title": "unwrapping without panicking",
+      "code": "fn main() {\n    let a: i32 = \"42\".parse().unwrap_or(0);\n    let b: i32 = \"?\".parse().unwrap_or(0);\n    let c: i32 = \"?\".parse().unwrap_or_else(|e| {\n        println!(\"falling back because {e}\");\n        -1\n    });\n\n    let d = \"42\".parse::<i32>().ok();\n    let e = \"?\".parse::<i32>().ok();\n\n    println!(\"{a} {b} {c} {d:?} {e:?}\");\n}\n",
+      "output": "falling back because invalid digit found in string\n42 0 -1 Some(42) None"
+    },
+    {
+      "type": "callout",
+      "tone": "help",
+      "html": "<p><strong>Rule of thumb.</strong> Use <code>Result</code> for anything a caller might handle differently: bad input, a missing file, a network timeout. Use <code>panic!</code>, <code>unwrap</code>, and <code>expect</code> when the alternative is a program in an impossible state — an index you just checked, a string your own code wrote. A library that panics on bad input takes that choice away from its caller.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "A user types seven into a field that should hold a number. What should your function do?",
+      "options": ["Return a Result so the caller can decide what to show", "panic! with a helpful message", "Return the number 0 and carry on"],
+      "answer": 0,
+      "why": "Bad input is a failure we can plan for, so it becomes an Err value. A panic ends the whole program and gives the caller no say; returning 0 quietly turns a typo into wrong data."
+    },
+    {
+      "q": "A function returns Result. What does ? do when it meets an Err?",
+      "options": ["It panics with the error message", "It returns that error from the function immediately", "It retries the operation"],
+      "answer": 1,
+      "why": "? is a match in one character: on Ok it unwraps the value, on Err it returns the error to the caller, which is why the function must return a Result."
+    },
+    {
+      "q": "Which of these panics with a message you wrote yourself?",
+      "options": ["value.expect(\"the config must exist\")", "value.unwrap()", "value.unwrap_or(0)"],
+      "answer": 0,
+      "why": "expect takes your text and includes it in the panic. unwrap panics with the standard message, and unwrap_or never panics at all."
+    }
+  ],
+  "exercise": {
+    "brief": "Fill in parse_all: parse both strings, add them, and return the sum wrapped in Ok. Use ? so a bad number comes back as Err.",
+    "starter": "fn parse_all(a: &str, b: &str) -> Result<i32, std::num::ParseIntError> {\n    // parse a and b, then return Ok of their sum\n    Ok(0)\n}\n\nfn main() {\n    match parse_all(\"40\", \"2\") {\n        Ok(n) => println!(\"ok {n}\"),\n        Err(e) => println!(\"bad number: {e}\"),\n    }\n\n    match parse_all(\"40\", \"x\") {\n        Ok(n) => println!(\"ok {n}\"),\n        Err(e) => println!(\"bad number: {e}\"),\n    }\n}\n",
+    "hint": "parse needs to know the type it is producing, so write let x: i32 = a.parse()?; and the same for b. Then Ok(x + y). The ? works because this function already returns a Result.",
+    "checks": [
+      { "kind": "compiles" },
+      { "kind": "outputContains", "value": "ok 42" },
+      { "kind": "outputContains", "value": "bad number: invalid digit found in string" }
+    ],
+    "solution": "fn parse_all(a: &str, b: &str) -> Result<i32, std::num::ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    match parse_all(\"40\", \"2\") {\n        Ok(n) => println!(\"ok {n}\"),\n        Err(e) => println!(\"bad number: {e}\"),\n    }\n\n    match parse_all(\"40\", \"x\") {\n        Ok(n) => println!(\"ok {n}\"),\n        Err(e) => println!(\"bad number: {e}\"),\n    }\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Recoverable Errors with Result", "href": "book/ch09-02-recoverable-errors-with-result.html" },
+    { "label": "The Book · To panic! or Not to panic!", "href": "book/ch09-03-to-panic-or-not-to-panic.html" },
+    { "label": "Rust by Example · Error handling", "href": "rust-by-example/error.html" }
+  ]
+}

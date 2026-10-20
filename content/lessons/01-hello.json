@@ -1,0 +1,83 @@
+{
+  "id": "01-hello",
+  "title": "Your first Rust program",
+  "minutes": 7,
+  "summary": "Print text, read the compiler's answer, and meet the Run button.",
+  "keywords": ["println", "main", "macro", "comments"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Press <strong>Run</strong> under any code block in this book and the Rust compiler on this machine compiles it, runs it, and shows you the real output and the real errors. Nothing here is a picture of Rust.</p><p>Here is the smallest useful program.</p>"
+    },
+    {
+      "type": "code",
+      "title": "main.rs",
+      "code": "fn main() {\n    println!(\"Hello, Rust\");\n}\n",
+      "output": "Hello, Rust"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>fn main()</code> is the entry point of a binary — the compiler refuses to produce a program without it. The body is a block in braces, and <code>println!</code> writes a line to standard output.</p><p>The exclamation mark is not punctuation. <code>println!</code> is a <em>macro</em>: code that writes code. Most of Rust looks like ordinary function calls, so treat the <code>!</code> as the one visible mark of a macro.</p>"
+    },
+    {
+      "type": "code",
+      "title": "printing values",
+      "code": "fn main() {\n    let planet = \"Earth\";\n    let moons = 1;\n    println!(\"{planet} has {moons} moon\");\n    println!(\"{} plus {} is {}\", 2, 3, 2 + 3);\n}\n",
+      "output": "Earth has 1 moon\n2 plus 3 is 5"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Curly braces mark slots in the format string. A bare name inside them grabs a variable in scope, and empty braces <code>{}</code> take the next argument from the list after the string. Arguments are always checked: pass the wrong number and the program will not compile.</p>"
+    },
+    {
+      "type": "callout",
+      "tone": "help",
+      "html": "<p>Real projects do not compile single files by hand. In a terminal, <code>cargo new hello</code> makes a project, and <code>cargo run</code> builds and runs it. Inside that project, <code>main</code> lives in <code>src/main.rs</code>. The examples in this book are single files only so the Run button can be instant — the code you write is the same code.</p>"
+    },
+    {
+      "type": "code",
+      "title": "comments",
+      "code": "// A line comment runs to the end of the line.\nfn main() {\n    /* This comment can span\n       several lines. */\n    println!(\"comments are free\"); // even a trailing one\n}\n",
+      "output": "comments are free"
+    },
+    {
+      "type": "prose",
+      "html": "<p>That is the whole ritual of a program: a <code>main</code> function, statements inside it, and values printed out. Everything else in Rust is about what those values <em>are</em>.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which item does the compiler require before it can build a runnable program?",
+      "options": ["fn main()", "println!()", "let main = 0;"],
+      "answer": 0,
+      "why": "main is the entry point of an executable. println! is just a macro that writes a line, and let creates a binding."
+    },
+    {
+      "q": "You have a variable called n. Which line prints its value?",
+      "options": ["println!(\"{n}\");", "println!(\"n\");", "println!(n);"],
+      "answer": 0,
+      "why": "Curly braces mark a slot in the format string, and a name inside them refers to a variable in scope. With no braces, println!(\"n\") would print the letter n."
+    },
+    {
+      "q": "What does the ! in println! tell you?",
+      "options": ["It is a macro, not a function", "The statement runs before main", "The call cannot fail"],
+      "answer": 0,
+      "why": "Macros expand into other code at compile time. Ordinary functions are called with plain parentheses and no bang."
+    }
+  ],
+  "exercise": {
+    "brief": "Print two lines. The first is any greeting you like. The second is the number stored in the variable answer.",
+    "starter": "fn main() {\n    let answer = 42;\n    // print your greeting, then print the answer\n\n}\n",
+    "hint": "Each println! call writes one line, so you need two calls. To print the variable, put its name inside braces: {answer}.",
+    "checks": [
+      { "kind": "stdoutLines", "value": 2 },
+      { "kind": "outputContains", "value": "42" }
+    ],
+    "solution": "fn main() {\n    let answer = 42;\n    println!(\"Hello, Rust\");\n    println!(\"{answer}\");\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Hello, World!", "href": "book/ch01-02-hello-world.html" },
+    { "label": "The Book · Hello, Cargo!", "href": "book/ch01-03-hello-cargo.html" },
+    { "label": "Rust by Example · Hello World", "href": "rust-by-example/hello.html" }
+  ]
+}

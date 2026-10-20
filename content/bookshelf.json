@@ -1,0 +1,121 @@
+{
+  "intro": "These are the books shipped with the toolchain on this machine. Everything here opens through this server, so rustdoc search, mdbook search, and every relative link work offline — no internet needed.",
+  "groups": [
+    {
+      "title": "Learn the language",
+      "items": [
+        {
+          "label": "The Rust Programming Language",
+          "href": "book/index.html",
+          "note": "The long course. Twenty chapters, three real projects, careful explanations. Start here after finishing this app.",
+          "tag": "the book"
+        },
+        {
+          "label": "Rust by Example",
+          "href": "rust-by-example/index.html",
+          "note": "The same ideas told as runnable programs, with exercises at the bottom of each page.",
+          "tag": "code first"
+        }
+      ]
+    },
+    {
+      "title": "Use it",
+      "items": [
+        {
+          "label": "Standard library API",
+          "href": "std/index.html",
+          "note": "Vec, String, HashMap, Iterator, Option, Result — the types you write every day. Has its own search box.",
+          "tag": "daily reference"
+        },
+        {
+          "label": "Core API",
+          "href": "core/index.html",
+          "note": "The part of the standard library that works without an operating system."
+        },
+        {
+          "label": "Alloc API",
+          "href": "alloc/index.html",
+          "note": "String and Vec without a full standard library."
+        },
+        {
+          "label": "The Cargo Book",
+          "href": "cargo/index.html",
+          "note": "Packages, dependencies, workspaces, profiles, publishing to crates.io."
+        },
+        {
+          "label": "The rustc Book",
+          "href": "rustc/index.html",
+          "note": "Every compiler flag you will eventually want, including code generation and targets."
+        },
+        {
+          "label": "The rustdoc Book",
+          "href": "rustdoc/index.html",
+          "note": "How to write doc comments and generate the documentation for your own crate."
+        },
+        {
+          "label": "The Clippy Book",
+          "href": "clippy/index.html",
+          "note": "The lint collection that reads your code and suggests the idiomatic version."
+        },
+        {
+          "label": "Error codes",
+          "href": "error_codes/index.html",
+          "note": "The extended explanation behind E0382, E0499, E0502 and every other numbered error.",
+          "tag": "when it shouts"
+        },
+        {
+          "label": "Release notes",
+          "href": "releases.html",
+          "note": "What changed in each toolchain release."
+        }
+      ]
+    },
+    {
+      "title": "Master it",
+      "items": [
+        {
+          "label": "The Rust Reference",
+          "href": "reference/index.html",
+          "note": "The precise semantics: expressions, patterns, type layout, destructors, attributes.",
+          "tag": "the rules"
+        },
+        {
+          "label": "The Rustonomicon",
+          "href": "nomicon/index.html",
+          "note": "Unsafe Rust, the dark arts: raw pointers, aliasing, unwinding, implementing Vec.",
+          "tag": "unsafe"
+        },
+        {
+          "label": "The Rust Style Guide",
+          "href": "style-guide/index.html",
+          "note": "The formatting decisions cargo fmt already made for you."
+        },
+        {
+          "label": "The Edition Guide",
+          "href": "edition-guide/index.html",
+          "note": "What the 2015, 2018, 2021 and 2024 editions changed, and how to migrate."
+        },
+        {
+          "label": "The Unstable Book",
+          "href": "unstable-book/index.html",
+          "note": "Features behind a #![feature] gate."
+        }
+      ]
+    },
+    {
+      "title": "Specialize",
+      "items": [
+        {
+          "label": "The Embedded Rust Book",
+          "href": "embedded-book/index.html",
+          "note": "Bare metal and embedded Linux, for people already comfortable with Rust."
+        },
+        {
+          "label": "proc_macro API",
+          "href": "proc_macro/index.html",
+          "note": "The crate behind derive macros and attribute macros."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "id": "11-iterators",
+  "title": "Closures and iterators",
+  "minutes": 11,
+  "summary": "Small inline functions, and chains that transform a collection.",
+  "keywords": ["closure", "iter", "map", "filter", "collect", "fold", "laziness"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>A <strong>closure</strong> is a small function you write inline. The syntax swaps <code>fn name(params)</code> for two pipes around the parameters, and the body is one expression or a block. Like <code>let</code>, a closure is a value: you can store it in a binding or hand it to a method.</p>"
+    },
+    {
+      "type": "code",
+      "title": "closures infer their types and see their surroundings",
+      "code": "fn main() {\n    let double = |x| x * 2;\n    println!(\"{}\", double(5));\n\n    let offset = 100;\n    let add_offset = |x: i32| x + offset;\n    println!(\"{}\", add_offset(5));\n\n    let mut calls = 0;\n    let mut tally = |x: i32| {\n        calls += 1;\n        x + calls\n    };\n    println!(\"{}\", tally(10));\n    println!(\"{}\", tally(10));\n}\n",
+      "output": "10\n105\n11\n12"
+    },
+    {
+      "type": "prose",
+      "html": "<p>The parameter and return types of a closure are usually inferred from the first call, which is why <code>|x| x * 2</code> needs no annotation. A closure also captures: <code>add_offset</code> reads <code>offset</code> from the surrounding scope, and <code>tally</code> writes to <code>calls</code>, which is why <code>tally</code> must be bound with <code>mut</code>. One footnote for later: writing <code>move |x| ...</code> makes the closure take ownership of what it captures instead of borrowing, which matters when the closure has to outlive the current scope.</p><p>Now the iterators. There are three ways to walk a collection, and the difference is ownership.</p>"
+    },
+    {
+      "type": "code",
+      "title": "iter, iter_mut, into_iter",
+      "code": "fn main() {\n    let mut v = vec![1, 2, 3, 4];\n\n    let mut total = 0;\n    for n in v.iter() {\n        total += n;\n    }\n    println!(\"borrowed total {total}\");\n    println!(\"v is still here: {v:?}\");\n\n    for n in v.iter_mut() {\n        *n *= 10;\n    }\n    println!(\"after iter_mut: {v:?}\");\n\n    let mut owned = 0;\n    for n in v.into_iter() {\n        owned += n;\n    }\n    println!(\"owned total {owned}\");\n}\n",
+      "output": "borrowed total 10\nv is still here: [1, 2, 3, 4]\nafter iter_mut: [10, 20, 30, 40]\nowned total 100"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>v.iter()</code> lends you <code>&amp;T</code> and leaves <code>v</code> usable afterwards. <code>v.iter_mut()</code> lends you <code>&amp;mut T</code>, so you can write through it. <code>v.into_iter()</code> takes the collection apart and hands you owned <code>T</code> — after that <code>v</code> is gone, which is why nothing touches <code>v</code> again once the last loop has run.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Iterators are <strong>lazy</strong>. An adapter such as <code>map</code> or <code>filter</code> does no work at all when you call it; it returns a new iterator that carries the recipe. Nothing is visited until a <em>consumer</em> asks for results — <code>collect</code>, <code>sum</code>, <code>count</code>, <code>fold</code>, or a plain <code>for</code> loop.</p><p>Watch the order of the lines below: the closure prints only after the adapter is consumed, not when it is built.</p>"
+    },
+    {
+      "type": "code",
+      "title": "nothing happens until a consumer asks",
+      "code": "fn main() {\n    let v = vec![1, 2, 3];\n\n    let loud = v.iter().map(|x| {\n        println!(\"visiting {x}\");\n        x * 2\n    });\n\n    println!(\"built the adapter\");\n\n    let total: i32 = loud.sum();\n    println!(\"total {total}\");\n}\n",
+      "output": "built the adapter\nvisiting 1\nvisiting 2\nvisiting 3\ntotal 12"
+    },
+    {
+      "type": "prose",
+      "html": "<p>The adapters you will use every week:</p><ul><li><code>map</code> — transform each item</li><li><code>filter</code> — keep the items whose predicate returns true</li><li><code>enumerate</code> — pair each item with its index</li><li><code>take(n)</code> — stop after n items</li><li><code>zip</code> — glue two iterators into pairs</li><li><code>collect</code> — build a <code>Vec</code>, or another collection, from the results</li></ul><p>And the consumers that actually run the chain: <code>sum</code>, <code>count</code>, <code>fold</code>. A chain reads left to right the way the data flows. <code>collect</code> needs to know what to build, so give the binding a type: <code>let out: Vec&lt;i32&gt; = ...collect();</code>. The shorthand <code>collect::&lt;Vec&lt;_&gt;&gt;()</code> says the same thing and lets the compiler fill in the element type.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a realistic chain: filter, map, collect",
+      "code": "fn main() {\n    let names = vec![\n        String::from(\"ada\"),\n        String::from(\"alan\"),\n        String::from(\"grace\"),\n        String::from(\"bob\"),\n    ];\n\n    let long_shouty: Vec<String> = names\n        .iter()\n        .filter(|n| n.len() > 3)\n        .map(|n| n.to_uppercase())\n        .collect();\n\n    println!(\"{long_shouty:?}\");\n    println!(\"kept {} of {}\", long_shouty.len(), names.len());\n}\n",
+      "output": "[\"ALAN\", \"GRACE\"]\nkept 2 of 4"
+    },
+    {
+      "type": "code",
+      "title": "enumerate, zip, take",
+      "code": "fn main() {\n    let scores = vec![8.5, 9.0, 7.25];\n\n    for (i, score) in scores.iter().enumerate() {\n        println!(\"{i}: {score}\");\n    }\n\n    let names = vec![String::from(\"ada\"), String::from(\"bob\")];\n    for (name, score) in names.iter().zip(scores.iter()) {\n        println!(\"{name} scored {score}\");\n    }\n\n    let first_two: f64 = scores.iter().take(2).sum();\n    println!(\"first two total {first_two}\");\n}\n",
+      "output": "0: 8.5\n1: 9\n2: 7.25\nada scored 8.5\nbob scored 9\nfirst two total 17.5"
+    },
+    {
+      "type": "code",
+      "title": "fold, count, and sorting what you collected",
+      "code": "fn main() {\n    let scores = vec![8.5, 9.0, 7.25];\n\n    let product: f64 = scores.iter().fold(2.0, |acc, s| acc * s);\n    println!(\"product {product}\");\n    println!(\"count {}\", scores.iter().count());\n\n    let mut names = vec![\n        String::from(\"grace\"),\n        String::from(\"ada\"),\n        String::from(\"bob\"),\n    ];\n    names.sort_by_key(|n| n.len());\n    println!(\"{names:?}\");\n}\n",
+      "output": "product 1109.25\ncount 3\n[\"ada\", \"bob\", \"grace\"]"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>fold</code> is the one that looks odd and is worth knowing: it carries an accumulator through the chain, starting from the value you pass in. <code>sum</code> and <code>count</code> are special cases of it. <code>sort_by_key</code> is a plain method on a <code>Vec</code>, not an adapter, and it sorts in place.</p><p>Almost all real iterator code has the shape of the first chain: one source, two or three adapters, one consumer. When a chain grows past that, break it into named steps with <code>let</code> bindings. The compiler is happy either way; the next reader is not.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which method takes ownership of the vector, so v cannot be used afterwards?",
+      "options": ["v.into_iter()", "v.iter()", "v.iter_mut()"],
+      "answer": 0,
+      "why": "into_iter consumes the collection and yields owned values. iter and iter_mut borrow it and hand out references, so v stays usable."
+    },
+    {
+      "q": "let loud = v.iter().map(|x| x * 2); — when does that closure run?",
+      "options": ["When a consumer such as collect, sum or a for loop pulls the values", "Immediately, as soon as map is called", "When the vector is next modified"],
+      "answer": 0,
+      "why": "Adapters are lazy: map only builds a new iterator that remembers the work. The work happens when something consumes it."
+    },
+    {
+      "q": "What is |x| x * 2?",
+      "options": ["A closure: a value you can store in a binding or pass to a method", "A function declaration that needs a name", "A loop that runs twice"],
+      "answer": 0,
+      "why": "The pipes hold the parameters, the expression after them is the body, and the whole thing is an expression you can bind with let, exactly like a number."
+    }
+  ],
+  "exercise": {
+    "brief": "values holds 1 to 5. Use an iterator chain to keep only the even numbers, double each one, and print their total.",
+    "starter": "fn main() {\n    let values = vec![1, 2, 3, 4, 5];\n\n    // filter the evens, double them, sum the results\n\n}\n",
+    "hint": "Start with values.into_iter() so the closure receives owned i32 values, then .filter(|n| n % 2 == 0), then .map(|n| n * 2), then .sum(). Give the result a type: let total: i32 = ...",
+    "checks": [
+      { "kind": "compiles" },
+      { "kind": "outputEquals", "value": "12" }
+    ],
+    "solution": "fn main() {\n    let values = vec![1, 2, 3, 4, 5];\n\n    let total: i32 = values\n        .into_iter()\n        .filter(|n| n % 2 == 0)\n        .map(|n| n * 2)\n        .sum();\n\n    println!(\"{total}\");\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Closures", "href": "book/ch13-01-closures.html" },
+    { "label": "The Book · Processing a Series of Items with Iterators", "href": "book/ch13-02-iterators.html" },
+    { "label": "std · Iterator", "href": "std/iter/trait.Iterator.html" }
+  ]
+}

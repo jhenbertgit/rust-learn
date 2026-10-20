@@ -1,0 +1,98 @@
+{
+  "id": "04-funcs",
+  "title": "Functions and expressions",
+  "minutes": 10,
+  "summary": "Parameters in, one value out, and why the last line has no semicolon.",
+  "keywords": ["fn", "parameters", "return", "expressions", "blocks"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>A function is a name for a piece of work. Every parameter carries an explicit type, and the return type follows an arrow. Nothing about a signature is inferred: <code>fn name(parameter: Type) -> Type</code> is the whole shape, and a function that returns nothing simply omits the arrow.</p>"
+    },
+    {
+      "type": "code",
+      "title": "one parameter, one result",
+      "code": "fn double(n: i32) -> i32 {\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", double(4));\n    println!(\"{}\", double(-3));\n}\n",
+      "output": "8\n-6"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Look closely at the body: <code>n * 2</code> has no semicolon. The body is a block, and a block is an expression whose value is its last line. With <code>-> i32</code> promised, that final value is what the function hands back.</p><p>A line that ends in a semicolon is a <em>statement</em>: it does something and yields nothing. A line without one is an <em>expression</em>: it has a value.</p>"
+    },
+    {
+      "type": "code",
+      "title": "the semicolon that eats the answer",
+      "runnable": false,
+      "code": "fn double(n: i32) -> i32 {\n    n * 2;\n}\n\nfn main() {\n    println!(\"{}\", double(4));\n}\n"
+    },
+    {
+      "type": "callout",
+      "tone": "warn",
+      "html": "<p>That semicolon turns the answer into a statement, so the body has no value left to return. The compiler says <code>error[E0308]: mismatched types</code>, notes that it <code>expected i32, found ()</code>, and adds <code>help: remove this semicolon to return this value</code>. The <code>()</code> is the empty tuple: the type of a block that produces nothing.</p><p>If you ever see <code>expected i32, found ()</code>, hunt for a stray semicolon on the last line of the function.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Because blocks are expressions, a block can be used anywhere a value goes, including the right side of a <code>let</code>. Inside the braces you may run as many statements as you like; the last line without a semicolon supplies the value for the whole block.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a block as a value",
+      "code": "fn main() {\n    let base = 2;\n    let scaled = {\n        let step = base + 1;\n        step * 10\n    };\n    println!(\"{scaled}\");\n}\n",
+      "output": "30"
+    },
+    {
+      "type": "prose",
+      "html": "<p>The trailing expression is the normal way to return a value, and it is the one you should reach for. <code>return</code> still exists for <em>early exit</em>: guard clauses at the top of a function that bail out before the real work. Both styles in one function read well — <code>return</code> for the exception, a trailing expression for the rule.</p>"
+    },
+    {
+      "type": "code",
+      "title": "return for the early exit",
+      "code": "fn clamp_low(n: i32) -> i32 {\n    if n < 0 {\n        return 0;\n    }\n    n\n}\n\nfn main() {\n    println!(\"{}\", clamp_low(-5));\n    println!(\"{}\", clamp_low(9));\n}\n",
+      "output": "0\n9"
+    },
+    {
+      "type": "code",
+      "title": "a function that calls a function",
+      "code": "fn with_tax(price: i32) -> i32 {\n    price * 121 / 100\n}\n\nfn total(price: i32, count: i32) -> i32 {\n    with_tax(price) * count\n}\n\nfn main() {\n    println!(\"{}\", with_tax(100));\n    println!(\"{}\", total(100, 3));\n}\n",
+      "output": "121\n363"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Functions call each other freely: <code>total</code> uses <code>with_tax</code> as if it were a value, because a call <em>is</em> an expression. That is how programs get built — a few small functions with type-checked contracts, and one <code>main</code> that wires them together. Note that <code>price * 121 / 100</code> stays in integers, so the tax is truncated to whole units.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "Which function returns the value 5?",
+      "options": ["fn five() -> i32 { 5 }", "fn five() -> i32 { 5; }", "fn five() { 5 }"],
+      "answer": 0,
+      "why": "The body must end in an expression of the promised type. A trailing semicolon leaves the empty tuple, and a missing -> i32 promises nothing at all."
+    },
+    {
+      "q": "In a function signature, what always needs a type written out?",
+      "options": ["every parameter", "only the return value", "nothing, types are always inferred"],
+      "answer": 0,
+      "why": "Parameter types are mandatory because the compiler will not guess across a function boundary. Local bindings inside the body are usually inferred from their initializer."
+    },
+    {
+      "q": "What is the value of the block { let a = 2; a * 3 }",
+      "options": ["6", "()", "2"],
+      "answer": 0,
+      "why": "A block is an expression whose value is its last line, here a * 3. The let above it is a statement, so it contributes nothing."
+    }
+  ],
+  "exercise": {
+    "brief": "Write a function total that takes two i32 parameters and returns their sum, then print the result of total(4, 5) from main.",
+    "starter": "// write total above main\n\nfn main() {\n    // print total(4, 5) here\n\n}\n",
+    "hint": "The signature is fn total(a: i32, b: i32) -> i32. The body can be a single expression with no semicolon: a + b.",
+    "checks": [
+      { "kind": "outputEquals", "value": "9" }
+    ],
+    "solution": "fn total(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", total(4, 5));\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · How Functions Work", "href": "book/ch03-03-how-functions-work.html" },
+    { "label": "Rust by Example · Functions", "href": "rust-by-example/fn.html" },
+    { "label": "The Reference · Expressions", "href": "reference/expressions.html" }
+  ]
+}

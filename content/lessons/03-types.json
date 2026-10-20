@@ -1,0 +1,99 @@
+{
+  "id": "03-types",
+  "title": "Numbers, text, and shapes",
+  "minutes": 10,
+  "summary": "Integers, floats, text, and the tuple and array shapes that group them.",
+  "keywords": ["integers", "f64", "char", "tuple", "array", "as"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>Every value in Rust has a type, and the compiler checks types before the program ever runs. You rarely write the type out: given <code>let n = 3;</code> the compiler picks one for you. That is <em>inference</em>, and it is a convenience, not a promise that types do not matter.</p>"
+    },
+    {
+      "type": "code",
+      "title": "integers come in sized boxes",
+      "code": "fn main() {\n    let tiny: i8 = -128;\n    let million: u32 = 1_000_000;\n    let big: u64 = 18_000_000_000;\n    println!(\"{tiny} {million} {big}\");\n}\n",
+      "output": "-128 1000000 18000000000"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Integer types are a letter and a bit width. The letter says whether negative numbers are allowed: <code>i</code> for signed, <code>u</code> for unsigned. The number is how many bits of memory the value occupies.</p><ul><li><code>i8</code> / <code>u8</code> — 8 bits, so -128 to 127 or 0 to 255</li><li><code>i32</code> / <code>u32</code> — 32 bits, the default choice for signed integers</li><li><code>i64</code> / <code>u64</code> — 64 bits, for counts past the two billion an <code>i32</code> can hold</li></ul><p>Underscores in a number are decoration for the reader: <code>1_000_000</code> and <code>1000000</code> are the same value. Decimal numbers use <code>f32</code> or <code>f64</code>, and an unannotated decimal is <code>f64</code>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "floats, booleans, characters, text",
+      "code": "fn main() {\n    let ratio: f64 = 2.5;\n    let ready = false;\n    let grade = 'A';\n    let subject = \"math\";\n    println!(\"{ratio} {ready} {grade} in {subject}\");\n    println!(\"{}, {}\", 'a' == 'a', 'b' > 'a');\n}\n",
+      "output": "2.5 false A in math\ntrue, true"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A <code>char</code> is one Unicode scalar value — one character, in single quotes. Double quotes make text: <code>\"math\"</code> is a string literal, and its type is <code>&amp;str</code>. That <code>&amp;</code> is the only unexplained symbol on this page; it earns its place in chapter 07. For now, single quotes hold one character and double quotes hold text.</p>"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Two shapes group values without any ceremony. A <em>tuple</em> packs a fixed number of values that may have different types, and you reach into it by position: <code>.0</code>, <code>.1</code>. A pattern like <code>let (x, y) = point;</code> unpacks the whole tuple at once; that is <em>destructuring</em>.</p><p>An <em>array</em> holds many values of one type, and its length is part of its type: <code>[i32; 3]</code> is three integers and never four. Ask it for <code>.len()</code>, read a slot with <code>[index]</code>, and counting starts at zero.</p>"
+    },
+    {
+      "type": "code",
+      "title": "tuples: build, index, destructure",
+      "code": "fn main() {\n    let pair = (3, true);\n    let point: (i32, i32) = (10, -4);\n    println!(\"{} {}\", pair.0, pair.1);\n    println!(\"{} {}\", point.0, point.1);\n    let (x, y) = point;\n    println!(\"x is {x}, y is {y}\");\n}\n",
+      "output": "3 true\n10 -4\nx is 10, y is -4"
+    },
+    {
+      "type": "diagram",
+      "title": "a tuple and an array side by side",
+      "ascii": "tuple: one name, positional fields\n    .0      .1        .2\n  +-------+---------+-------+\n  |  21   |  19.5   | true  |\n  +-------+---------+-------+\n  fields may differ in type\n\narray: one name, one type repeated\n    [0]     [1]       [2]\n  +-------+---------+-------+\n  |  21   |   19    |  24   |\n  +-------+---------+-------+\n  length 3 is part of the type\n"
+    },
+    {
+      "type": "code",
+      "title": "arrays: length, indexing, the repeat form",
+      "code": "fn main() {\n    let temps: [i32; 3] = [21, 19, 24];\n    println!(\"{} days\", temps.len());\n    println!(\"first {} third {}\", temps[0], temps[2]);\n    let zeros = [0; 4];\n    println!(\"{} zeros\", zeros.len());\n}\n",
+      "output": "3 days\nfirst 21 third 24\n4 zeros"
+    },
+    {
+      "type": "code",
+      "title": "casts and the integer division surprise",
+      "code": "fn main() {\n    let total = 10;\n    let parts = 4;\n    println!(\"{}\", total / parts);\n    println!(\"{}\", total as f64 / parts as f64);\n    let answer = 7;\n    let as_float = answer as f64;\n    println!(\"{}\", as_float / 2.0);\n}\n",
+      "output": "2\n2.5\n3.5"
+    },
+    {
+      "type": "callout",
+      "tone": "warn",
+      "html": "<p>Integer division throws the remainder away: <code>10 / 4</code> is <code>2</code>, not <code>2.5</code>. Convert with <code>as</code> before dividing and the decimals come back. <code>as</code> also changes width, and the bits that no longer fit are simply dropped: <code>let big = 300; let small = big as u8;</code> leaves <code>small</code> holding <code>44</code>. A literal is checked instead — <code>300 as u8</code> does not compile at all.</p><p>Integer arithmetic is checked as well, in a debug build. Take an <code>i8</code> holding <code>127</code>, add <code>1</code>, and the program stops with <code>attempt to add with overflow</code> rather than wrapping around. A release build wraps silently to -128, which is why the check exists while you develop.</p>"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "The compiler has to pick a type for the 3 in let n = 3; on its own. Which type does it pick?",
+      "options": ["i32", "u32", "it stays untyped until used"],
+      "answer": 0,
+      "why": "An integer with nothing else to go on is i32, the default signed 32-bit type. Later usage can force a different inference, but the fallback is i32."
+    },
+    {
+      "q": "Which type describes an array of exactly three i32 values?",
+      "options": ["[i32; 3]", "(i32, i32, i32)", "[i32, 3]"],
+      "answer": 0,
+      "why": "An array type is written element type, semicolon, length. The parenthesized form is a tuple: same values, but grouping by field rather than by index."
+    },
+    {
+      "q": "What does 7 / 2 evaluate to when both values are integers?",
+      "options": ["3", "3.5", "a compile error"],
+      "answer": 0,
+      "why": "Integer division truncates toward zero, so the fraction is discarded. Cast one side to f64 to get 3.5."
+    }
+  ],
+  "exercise": {
+    "brief": "Build a tuple holding the number 3 and the boolean true, and an array holding 10, 20, 30. Print the tuple's first field, the array's length, and the array's last element.",
+    "starter": "fn main() {\n    let pair = (3, true);\n    let nums: [i32; 3] = [10, 20, 30];\n    // print pair.0, then nums.len(), then the last element of nums\n\n}\n",
+    "hint": "Fields are read with pair.0 and slots with nums[0]. The last slot of a three-element array is nums[2], because counting starts at zero.",
+    "checks": [
+      { "kind": "outputEquals", "value": "3\n3\n30" }
+    ],
+    "solution": "fn main() {\n    let pair = (3, true);\n    let nums: [i32; 3] = [10, 20, 30];\n    println!(\"{}\", pair.0);\n    println!(\"{}\", nums.len());\n    println!(\"{}\", nums[2]);\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Data Types", "href": "book/ch03-02-data-types.html" },
+    { "label": "Rust by Example · Primitives", "href": "rust-by-example/primitives.html" },
+    { "label": "Rust by Example · Casting", "href": "rust-by-example/types/cast.html" }
+  ]
+}

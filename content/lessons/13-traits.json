@@ -1,0 +1,104 @@
+{
+  "id": "13-traits",
+  "title": "Sharing behavior",
+  "minutes": 11,
+  "summary": "Traits declare what a type can do, so one function can do it for many types.",
+  "keywords": ["trait", "impl", "default method", "generic", "bounds", "where", "derive", "dyn"],
+  "blocks": [
+    {
+      "type": "prose",
+      "html": "<p>A circle and a rectangle have nothing in common except the thing we care about: both have an area. A <em>trait</em> is the name we give that shared behavior. It declares method signatures and nothing else; each type then says how those methods work for it.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a Shape trait",
+      "code": "struct Circle {\n    radius: f64,\n}\n\nstruct Rect {\n    width: f64,\n    height: f64,\n}\n\ntrait Shape {\n    fn area(&self) -> f64;\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n}\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 {\n        self.width * self.height\n    }\n}\n\nfn main() {\n    let c = Circle { radius: 2.0 };\n    let r = Rect { width: 3.0, height: 4.0 };\n\n    println!(\"circle {:.2}\", c.area());\n    println!(\"rect {:.2}\", r.area());\n}\n",
+      "output": "circle 12.57\nrect 12.00"
+    },
+    {
+      "type": "prose",
+      "html": "<p><code>trait Shape</code> is a contract: any type that claims to be a <code>Shape</code> can answer <code>area()</code>. The claim is written <code>impl Shape for Circle</code>, and the compiler holds you to it — forget the method and it stops you before the program runs: <code>error[E0046]: not all trait items implemented, missing: `area`</code>.</p><p>Some methods have an obvious default body. Declare it in the trait and implementors get it for free, unless they override it. Inside a default method <code>self</code> is the concrete value, so it can call the methods the type does implement.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a default method",
+      "code": "struct Circle {\n    radius: f64,\n}\n\nstruct Rect {\n    width: f64,\n    height: f64,\n}\n\ntrait Shape {\n    fn area(&self) -> f64;\n\n    // A default method: the trait supplies the body.\n    fn describe(&self) -> String {\n        format!(\"a shape with area {:.2}\", self.area())\n    }\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n}\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 {\n        self.width * self.height\n    }\n}\n\nfn main() {\n    let c = Circle { radius: 2.0 };\n    let r = Rect { width: 1.0, height: 2.0 };\n\n    println!(\"{}\", c.describe());\n    println!(\"{}\", r.describe());\n}\n",
+      "output": "a shape with area 12.57\na shape with area 2.00"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Now the payoff. A generic function says \"I take any <code>T</code>\" and a bound says what that <code>T</code> must be able to do: <code>T: Shape</code>. One function, written once, works for every shape that exists or ever will. Two abilities are joined with <code>+</code>, or listed in a <code>where</code> clause when the signature gets crowded. <code>std::fmt::Debug</code> is the trait behind <code>{:?}</code>, and <code>#[derive(Debug)]</code> has the compiler write it for us.</p>"
+    },
+    {
+      "type": "code",
+      "title": "one bound and two bounds",
+      "code": "struct Circle {\n    radius: f64,\n}\n\n#[derive(Debug)]\nstruct Rect {\n    width: f64,\n    height: f64,\n}\n\ntrait Shape {\n    fn area(&self) -> f64;\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n}\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 {\n        self.width * self.height\n    }\n}\n\n// one bound: any type that implements Shape\nfn total_area<T: Shape>(shapes: &[T]) -> f64 {\n    let mut sum = 0.0;\n    for shape in shapes {\n        sum += shape.area();\n    }\n    sum\n}\n\n// two bounds, spelled out with where\nfn report<T>(shape: &T) -> String\nwhere\n    T: Shape + std::fmt::Debug,\n{\n    format!(\"{:?} has area {:.2}\", shape, shape.area())\n}\n\nfn main() {\n    let circles = vec![Circle { radius: 1.0 }, Circle { radius: 2.0 }];\n    let r = Rect { width: 2.0, height: 3.0 };\n\n    println!(\"total {:.2}\", total_area(&circles));\n    println!(\"{}\", report(&r));\n}\n",
+      "output": "total 15.71\nRect { width: 2.0, height: 3.0 } has area 6.00"
+    },
+    {
+      "type": "callout",
+      "tone": "note",
+      "html": "<p><code>#[derive(Debug)]</code> is not magic, it is a shortcut. <code>Debug</code>, <code>Clone</code>, and <code>PartialEq</code> are ordinary traits, and deriving one tells the compiler to write the boring impl — print the fields, copy the fields, compare the fields. Deriving <code>PartialEq</code> is what makes <code>==</code> work on your struct. One catch: every field must already implement the trait you asked to derive, or the compiler refuses.</p>"
+    },
+    {
+      "type": "code",
+      "title": "derive writes the impls",
+      "code": "#[derive(Debug, Clone, PartialEq)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let a = Point { x: 1, y: 2 };\n    let b = a.clone();\n    let c = Point { x: 9, y: 2 };\n\n    println!(\"a == b: {}\", a == b);\n    println!(\"a == c: {}\", a == c);\n    println!(\"b is {:?}\", b);\n}\n",
+      "output": "a == b: true\na == c: false\nb is Point { x: 1, y: 2 }"
+    },
+    {
+      "type": "prose",
+      "html": "<p>Writing <code>&lt;T: Shape&gt;</code> on every function is noise when the bound is obvious. <code>impl Trait</code> in argument position means the same thing: <code>fn show(shape: impl Shape)</code>. In return position it means \"some concrete type that implements Shape, and I am not telling you which\" — one type per function, chosen by the body.</p>"
+    },
+    {
+      "type": "code",
+      "title": "impl Trait, both positions",
+      "code": "struct Circle {\n    radius: f64,\n}\n\nstruct Rect {\n    width: f64,\n    height: f64,\n}\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> &'static str;\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n\n    fn name(&self) -> &'static str {\n        \"circle\"\n    }\n}\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 {\n        self.width * self.height\n    }\n\n    fn name(&self) -> &'static str {\n        \"rect\"\n    }\n}\n\n// argument position: anything that implements Shape\nfn show(shape: impl Shape) {\n    println!(\"{} {:.2}\", shape.name(), shape.area());\n}\n\n// return position: one concrete type, name withheld\nfn unit_circle() -> impl Shape {\n    Circle { radius: 1.0 }\n}\n\nfn main() {\n    show(unit_circle());\n    show(Rect { width: 2.0, height: 3.0 });\n}\n",
+      "output": "circle 3.14\nrect 6.00"
+    },
+    {
+      "type": "prose",
+      "html": "<p>A vector holding circles <em>and</em> rectangles cannot be <code>Vec&lt;T&gt;</code>, because a vector holds one type. <code>Box&lt;dyn Shape&gt;</code> solves it: a box owns a value on the heap, and <code>dyn Shape</code> says \"whatever is in here implements Shape\". The compiler stops tracking the concrete type, and the method is looked up when the program runs. That is <strong>dynamic dispatch</strong>. The generic version above is the opposite: the compiler stamps out a separate copy of the function for each type, so each call is a direct one. That is called <strong>monomorphization</strong>.</p>"
+    },
+    {
+      "type": "code",
+      "title": "a vector of shapes",
+      "code": "struct Circle {\n    radius: f64,\n}\n\nstruct Rect {\n    width: f64,\n    height: f64,\n}\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> &'static str;\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n\n    fn name(&self) -> &'static str {\n        \"circle\"\n    }\n}\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 {\n        self.width * self.height\n    }\n\n    fn name(&self) -> &'static str {\n        \"rect\"\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Circle { radius: 2.0 }),\n        Box::new(Rect { width: 3.0, height: 4.0 }),\n    ];\n\n    let mut total = 0.0;\n    for shape in &shapes {\n        println!(\"{} {:.2}\", shape.name(), shape.area());\n        total += shape.area();\n    }\n    println!(\"total {:.2}\", total);\n}\n",
+      "output": "circle 12.57\nrect 12.00\ntotal 24.57"
+    }
+  ],
+  "quiz": [
+    {
+      "q": "What does a trait declaration contain?",
+      "options": ["Method signatures, and optionally default bodies", "The fields every implementor must have", "The values of the constants used by the type"],
+      "answer": 0,
+      "why": "A trait describes behavior: which methods exist and what they take and return. Fields belong to structs, and each implementor keeps its own."
+    },
+    {
+      "q": "A generic function bounded by T: Shape is called with a slice of circles. When is the code that runs Shape::area chosen for that call?",
+      "options": ["At compile time, because T is a known concrete type", "At run time, by looking up the method on the value", "Never: the bound only documents intent"],
+      "answer": 0,
+      "why": "A generic function is monomorphized: the compiler produces a version specialized for Circle, so the call is direct. A trait object instead looks the method up at run time."
+    },
+    {
+      "q": "You want == to work on your struct. Which line gives you that?",
+      "options": ["#[derive(PartialEq)] above the struct", "#[derive(Clone)] above the struct", "impl Shape for MyStruct"],
+      "answer": 0,
+      "why": "PartialEq is the trait behind ==, and deriving it has the compiler write a field-by-field comparison. Clone only adds the .clone() method."
+    }
+  ],
+  "exercise": {
+    "brief": "Triangle already implements Area, but with the wrong formula: it adds the sides instead of using half of base times height. Fix the body so the program prints the real area.",
+    "starter": "struct Triangle {\n    base: f64,\n    height: f64,\n}\n\ntrait Area {\n    fn area(&self) -> f64;\n}\n\nimpl Area for Triangle {\n    fn area(&self) -> f64 {\n        self.base + self.height\n    }\n}\n\nfn main() {\n    let t = Triangle { base: 4.0, height: 3.0 };\n    println!(\"area = {:.2}\", t.area());\n}\n",
+    "hint": "Inside the impl, self is the triangle, so self.base and self.height are the fields. The area of a triangle is base * height / 2.0, not the sum of the two sides.",
+    "checks": [
+      { "kind": "compiles" },
+      { "kind": "outputEquals", "value": "area = 6.00" }
+    ],
+    "solution": "struct Triangle {\n    base: f64,\n    height: f64,\n}\n\ntrait Area {\n    fn area(&self) -> f64;\n}\n\nimpl Area for Triangle {\n    fn area(&self) -> f64 {\n        self.base * self.height / 2.0\n    }\n}\n\nfn main() {\n    let t = Triangle { base: 4.0, height: 3.0 };\n    println!(\"area = {:.2}\", t.area());\n}\n"
+  },
+  "docs": [
+    { "label": "The Book · Traits", "href": "book/ch10-02-traits.html" },
+    { "label": "Rust by Example · Traits", "href": "rust-by-example/trait.html" }
+  ]
+}
